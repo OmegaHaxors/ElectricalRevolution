@@ -451,9 +451,8 @@ namespace ElectricalRevolution
 		public override float GetResistance()
 		{
 			//float speed = this.TrueSpeed;
-			float theresistance = powerconverted / this.TrueSpeed;
-			if(float.IsNaN(theresistance)){theresistance = 0f;}
-			return Math.Max(0.01f,theresistance);
+			float theresistance = this.TrueSpeed / 100f;
+			return theresistance + 0.01f;
 		}
 		public override void JoinNetwork(MechanicalNetwork network)
 		{
