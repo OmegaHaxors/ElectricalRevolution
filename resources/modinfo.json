@@ -1,0 +1,16 @@
+{
+	"type": "code",
+	"name": "ElectricalRevolution",
+	"modid": "electricalrevolution",
+	"version": "0.0.1",
+	"RequiredOnClient": true,
+	"RequiredOnServer": true,
+
+	"description" : "Bringing the electrical revolution to Vintage Story",
+	"website": "",
+	"authors": [ "CoreDev:OmegaHaxors","Texture/Models:Sleeves" ],
+	
+	"dependencies": {
+		"game": "1.15.0"
+	}
+}

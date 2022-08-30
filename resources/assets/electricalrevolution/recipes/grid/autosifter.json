@@ -1,0 +1,14 @@
+{
+	ingredientPattern: "IBS	PCP	PTP",
+	ingredients: {
+		"I": { type: "item", code: "game:solderingiron", isTool: true, toolDurabilityCost: 12 },
+		"B": { type: "item", code: "game:metalplate-brass", quantity: 2 },
+		"S": { type: "item", code: "game:solderbar-*", quantity: 12, name: "mat", allowedVariants: ["tin", "silver"]  },
+		"P": { type: "item", code: "game:metalplate-iron", quantity: 2 },
+		"C": { type: "item", code: "game:metalchain-steel", quantity: 2 },
+		"T": { type: "block", code: "game:woodentoggle-*" },
+	},
+	width: 3,
+	height: 3,
+	output: { type: "block", code: "autosifter:autosifter-ns", quantity: 1 }
+}

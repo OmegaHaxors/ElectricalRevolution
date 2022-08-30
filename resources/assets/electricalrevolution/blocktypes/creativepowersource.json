@@ -1,0 +1,44 @@
+{
+	code: "creativesource",
+	class: "CreativeSource",
+	entityclass: "CreativeSourceEntity",
+	entityBehaviors: [{ name: "CreativeConverter" }],
+	creativeinventory: { "general": ["*"],"mechanics": ["*"] },
+	blockmaterial: "Wood",
+	shape: { base:"game:block/clay/bowl-ground-glowing"},
+	textures: {
+		"content": { base: "game:block/fire" },
+	},
+	drops: [
+		{ type: "block", code: "lightblock", quantity: { avg: 1 }  }
+	],
+	sidesolid: {
+		all: false
+	},
+	sideopaque: {
+		all: false
+	},
+	resistance: 3.5,
+	maxStackSize: 1,
+	groundTransform: {
+		translation: { x: 0, y: 0, z: 0 },
+		rotation: { x: -90, y: 0, z: 0 },
+		origin: { x: 0.5, y: 0.45, z: 0.38 },
+		scale: 2.7
+	},
+	guiTransform: {
+		rotation: { x: -43, y: 45, z: 1 },
+		scale: 0.96
+	},
+	lightAbsorption: 0,
+	tpHandTransform: {
+		translation: { x: -1.2, y: -0.4, z: -0.6 },
+		rotation: { x: -90, y: 11, z: -103 },
+		origin: { x: 0.5, y: 0.25, z: 0.5 },
+		scale: 0.42
+	},
+	sounds: {
+		"place": "game:sounds/block/chute",
+		"walk": "game:sounds/block/hoppertumble"
+	}
+}
