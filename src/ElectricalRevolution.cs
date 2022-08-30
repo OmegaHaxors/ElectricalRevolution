@@ -451,8 +451,8 @@ namespace ElectricalRevolution
 		public override float GetResistance()
 		{
 			//float speed = this.TrueSpeed;
-			float theresistance = this.TrueSpeed / 100f;
-			return theresistance + 0.01f;
+			float theresistance = this.TrueSpeed;
+			return theresistance;
 		}
 		public override void JoinNetwork(MechanicalNetwork network)
 		{
@@ -476,7 +476,7 @@ namespace ElectricalRevolution
 				if(mpgenerator.GetBehavior<BEBehaviorElectricalConverter>() != null)
 				{
 					BEBehaviorElectricalConverter converter = mpgenerator.GetBehavior<BEBehaviorElectricalConverter>();
-					powerconverted = converter.Powerconverted;
+					powerconverted = converter.Powerconverted * 100000;
 				}
 			}
 			base.FromTreeAttributes(tree,worldAccessForResolve);
@@ -489,7 +489,7 @@ namespace ElectricalRevolution
 				if(mpgenerator.GetBehavior<BEBehaviorElectricalConverter>() != null)
 				{
 					BEBehaviorElectricalConverter converter = mpgenerator.GetBehavior<BEBehaviorElectricalConverter>();
-					converter.Powerconverted = Math.Max(0f,TrueSpeed*GetResistance());
+					converter.Powerconverted = Math.Max(0f,TrueSpeed*GetResistance())*100000;
 				}
 			}
 			base.ToTreeAttributes(tree);
