@@ -366,7 +366,7 @@ namespace ElectricalRevolution
 		public override void Initialize(ICoreAPI api)
 		{
 			base.Initialize(api);
-			RegisterGameTickListener(UpdateNBT,10);//only runs on the server (set to 100)
+			RegisterGameTickListener(UpdateNBT,1000);//only runs on the server (set to 100)
 		}
 		public void UpdateNBT(float dt)
 		{
