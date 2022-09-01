@@ -215,6 +215,7 @@ namespace ElectricalRevolution
 		public override void ToTreeAttributes(ITreeAttribute tree)
 		{
 			tree.SetFloat("powerconverted", this.Powerconverted);
+			base.Voltage = Powerconverted / 100f;
 			base.ToTreeAttributes(tree);
 		}
 	}
