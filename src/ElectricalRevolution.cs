@@ -12,6 +12,9 @@ using Vintagestory.API.MathTools;
 using Vintagestory.API.Util;
 using System.Collections.Generic;
 using System.Text;
+using SpiceSharp;
+using SpiceSharp.Components;
+using SpiceSharp.Simulations;
 
 [assembly: ModInfo( "ElectricalRevolution",
 	Description = "Bringing the electrical revolution to Vintage Story",
