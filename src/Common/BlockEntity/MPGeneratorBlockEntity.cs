@@ -32,31 +32,31 @@ namespace ElectricalRevolution
 		{
 			this.MarkDirty(true);
 		}
-		
+
 		public override void CreateBehaviors(Block block, IWorldAccessor worldForResolve)
 		{
 			base.CreateBehaviors(block, worldForResolve);
 			this.mpc = base.GetBehavior<BEBehaviorMPGenerator>();
 			if (this.mpc != null)
 			{
-				this.mpc.OnConnected = delegate()
-				{
-					this.powered = true;
-					/*if (this.renderer != null)
+				this.mpc.OnConnected = () =>
+        {
+          this.powered = true;
+          /*if (this.renderer != null)
 					{
 						this.renderer.ShouldRender = true;
 						this.renderer.ShouldRotateAutomated = true;
 					}*/
-				};
-				this.mpc.OnDisconnected = delegate()
-				{
-					this.powered = false;
-					/*if (this.renderer != null)
+        };
+				this.mpc.OnDisconnected = () =>
+        {
+          this.powered = false;
+          /*if (this.renderer != null)
 					{
 						this.renderer.ShouldRender = false;
 						this.renderer.ShouldRotateAutomated = false;
 					}*/
-				};
+        };
 			}
 		}
 	}
