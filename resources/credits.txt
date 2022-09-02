@@ -1,3 +1,5 @@
 Core Engine: OmegaHaxors
 
 Multimeter Model/Texture: Sleeves
+
+MNA: https://github.com/SpiceSharp/SpiceSharp
