@@ -30,20 +30,30 @@ namespace ElectricalRevolution
 		public float Current; //in Amps
 		public float Inductance; //in Henries
 		public BEBehaviorElectricalNode(BlockEntity blockentity) : base(blockentity){}
-		public override void Initialize(ICoreAPI api, JsonObject properties)
+
+    public override void Initialize(ICoreAPI api, JsonObject properties)
 		{
 			Resistance = 0; ParasiticResistance = 0; ParasiticCapacitance = 0;
 			Voltage = 0;  SeriesCapacitance = float.PositiveInfinity;
 			Current = 0; Inductance = 0;
 			base.Initialize(api, properties);
 		}
+
 		public override void GetBlockInfo(IPlayer forPlayer, StringBuilder sb)
 		{
 			base.GetBlockInfo(forPlayer, sb);
-			ItemStack helditem = forPlayer.InventoryManager.ActiveHotbarSlot.Itemstack;
-			ItemStack offhanditem = forPlayer.Entity.LeftHandItemSlot.Itemstack;
-			bool checkrighthand = false; bool checklefthand = false; ITreeAttribute rightattributes = null; ITreeAttribute leftattributes = null;
-			bool voltmeter = false; bool ammeter = false; bool calculator = false; bool ohmmeter = false; bool faradmeter = false; bool henrymeter = false; bool thermometer = false;
+
+      Dictionary<string, bool> meters = new Dictionary<string, bool>
+      {
+        { "voltmeter", false },
+        { "ammeter", false },
+        { "calculator", false },
+        { "ohmmeter", false },
+        { "faradmeter", false },
+        { "henrymeter", false },
+        { "thermometer", false }
+      };
+
 
 			if(forPlayer.WorldData.CurrentGameMode == EnumGameMode.Creative)
 			{
