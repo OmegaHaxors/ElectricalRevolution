@@ -26,8 +26,6 @@ namespace ElectricalRevolution
 		{
 			this.powerSetting = 3;
 		}
-		public override void Initialize(ICoreAPI api, JsonObject properties)
-		{base.Initialize(api, properties);}
 
 		internal bool OnInteract(IPlayer byPlayer)
 		{
