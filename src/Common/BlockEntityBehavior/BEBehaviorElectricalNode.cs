@@ -54,6 +54,12 @@ namespace ElectricalRevolution
         { "thermometer", false }
       };
 
+			bool isCreativePlayer = forPlayer.WorldData.CurrentGameMode == EnumGameMode.Creative;
+			foreach (var meter in meters)
+			{
+				meters[meter.Key] = isCreativePlayer || HasAttribute(forPlayer, meter.Key);
+			}
+
 
 			if(forPlayer.WorldData.CurrentGameMode == EnumGameMode.Creative)
 			{
