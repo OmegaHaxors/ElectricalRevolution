@@ -59,17 +59,17 @@ namespace ElectricalRevolution
 			if((checkrighthand && rightattributes.HasAttribute("henrymeter"))||(checklefthand && leftattributes.HasAttribute("henrymeter"))){henrymeter = true;}
 			if((checkrighthand && rightattributes.HasAttribute("thermometer"))||(checklefthand && leftattributes.HasAttribute("thermometer"))){thermometer = true;}
 			}
-			if(voltmeter){sb.AppendLine(string.Format(Lang.Get("Node: {0}V", new object[]{this.Voltage}), Array.Empty<object>()));}
-			if(ammeter){sb.AppendLine(string.Format(Lang.Get("Node: {0}A", new object[]{this.Current}), Array.Empty<object>()));}
-			if(voltmeter&&ammeter&&calculator){sb.AppendLine(string.Format(Lang.Get("Node: {0}W", new object[]{this.Voltage * this.Power}), Array.Empty<object>()));}
-			if(ohmmeter){sb.AppendLine(string.Format(Lang.Get("Node: {0}Ω", new object[]{this.Resistance}), Array.Empty<object>()));}
-			if(faradmeter){sb.AppendLine(string.Format(Lang.Get("Node: {0}F", new object[]{this.SeriesCapacitance}), Array.Empty<object>()));}
-			if(henrymeter){sb.AppendLine(string.Format(Lang.Get("Node: {0}H", new object[]{this.Inductance}), Array.Empty<object>()));}
+			if(voltmeter){ sb.AppendFormat(Lang.Get("Node: {0}V", new object[] { this.Voltage }), Array.Empty<object>()).AppendLine(); }
+			if(ammeter){ sb.AppendFormat(Lang.Get("Node: {0}A", new object[] { this.Current }), Array.Empty<object>()).AppendLine(); }
+			if(voltmeter&&ammeter&&calculator){ sb.AppendFormat(Lang.Get("Node: {0}W", new object[] { this.Voltage * this.Power }), Array.Empty<object>()).AppendLine(); }
+			if(ohmmeter){ sb.AppendFormat(Lang.Get("Node: {0}Ω", new object[] { this.Resistance }), Array.Empty<object>()).AppendLine(); }
+			if(faradmeter){ sb.AppendFormat(Lang.Get("Node: {0}F", new object[] { this.SeriesCapacitance }), Array.Empty<object>()).AppendLine(); }
+			if(henrymeter){ sb.AppendFormat(Lang.Get("Node: {0}H", new object[] { this.Inductance }), Array.Empty<object>()).AppendLine(); }
 
-			if(ohmmeter&&ammeter&&calculator){sb.AppendLine(string.Format(Lang.Get("Node: Parasitic {0}Ω", new object[]{this.ParasiticResistance}), Array.Empty<object>()));}
-			if(faradmeter&&voltmeter&&calculator){sb.AppendLine(string.Format(Lang.Get("Node: Parasitic {0}F", new object[]{this.ParasiticCapacitance}), Array.Empty<object>()));}
-			if(thermometer){sb.AppendLine(string.Format(Lang.Get("Node: {0}°c", new object[]{"0"}), Array.Empty<object>()));}
-			if(!voltmeter&&!ammeter&&!ohmmeter&&!faradmeter&&!henrymeter&&!thermometer){sb.AppendLine(string.Format(Lang.Get("Hold a meter tool in either hand to get a readout."), Array.Empty<object>()));}
+			if(ohmmeter&&ammeter&&calculator){ sb.AppendFormat(Lang.Get("Node: Parasitic {0}Ω", new object[] { this.ParasiticResistance }), Array.Empty<object>()).AppendLine(); }
+			if(faradmeter&&voltmeter&&calculator){ sb.AppendFormat(Lang.Get("Node: Parasitic {0}F", new object[] { this.ParasiticCapacitance }), Array.Empty<object>()).AppendLine(); }
+			if(thermometer){ sb.AppendFormat(Lang.Get("Node: {0}°c", new object[] { "0" }), Array.Empty<object>()).AppendLine(); }
+			if(!voltmeter&&!ammeter&&!ohmmeter&&!faradmeter&&!henrymeter&&!thermometer){ sb.AppendFormat(Lang.Get("Hold a meter tool in either hand to get a readout."), Array.Empty<object>()).AppendLine(); }
 		}
 		public override void FromTreeAttributes(ITreeAttribute tree, IWorldAccessor world)
 		{

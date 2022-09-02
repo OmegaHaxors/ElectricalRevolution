@@ -31,10 +31,10 @@ namespace ElectricalRevolution
 		public override void GetBlockInfo(IPlayer forPlayer, StringBuilder sb)
 		{
 			base.GetBlockInfo(forPlayer, sb);
-			sb.AppendLine(string.Format(Lang.Get("Power Converted: {0}", new object[]
-			{
-				Powerconverted
-			}), Array.Empty<object>()));
+      sb.AppendFormat(Lang.Get("Power Converted: {0}", new object[]
+      {
+        Powerconverted
+      }), Array.Empty<object>()).AppendLine();
 		}
 		public override void FromTreeAttributes(ITreeAttribute tree, IWorldAccessor world)
 		{

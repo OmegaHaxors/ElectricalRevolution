@@ -46,10 +46,10 @@ namespace ElectricalRevolution
 		public override void GetBlockInfo(IPlayer forPlayer, StringBuilder sb)
 		{
 			base.GetBlockInfo(forPlayer, sb);
-			sb.AppendLine(string.Format(Lang.Get("Generator Power: {0}%", new object[]
-			{
-				10 * this.powerSetting
-			}), Array.Empty<object>()));
+      sb.AppendFormat(Lang.Get("Generator Power: {0}%", new object[]
+      {
+        10 * this.powerSetting
+      }), Array.Empty<object>()).AppendLine();
 		}
 		public override void FromTreeAttributes(ITreeAttribute tree, IWorldAccessor world)
 		{
