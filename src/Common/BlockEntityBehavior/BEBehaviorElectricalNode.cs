@@ -41,7 +41,7 @@ namespace ElectricalRevolution
 		{
 			base.GetBlockInfo(forPlayer, sb);
 			ItemStack helditem = forPlayer.InventoryManager.ActiveHotbarSlot.Itemstack;
-			ItemStack offhanditem = forPlayer.InventoryManager.GetHotbarItemstack(10);
+			ItemStack offhanditem = forPlayer.Entity.LeftHandItemSlot.Itemstack;
 			bool checkrighthand = false; bool checklefthand = false; ITreeAttribute rightattributes = null; ITreeAttribute leftattributes = null;
 			bool voltmeter = false; bool ammeter = false; bool calculator = false; bool ohmmeter = false; bool faradmeter = false; bool henrymeter = false; bool thermometer = false;
 			
