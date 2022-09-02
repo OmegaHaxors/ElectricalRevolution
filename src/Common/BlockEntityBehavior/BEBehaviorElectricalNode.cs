@@ -59,6 +59,47 @@ namespace ElectricalRevolution
 				meters[meter.Key] = isCreativePlayer || HasAttribute(forPlayer, meter.Key);
 			}
 
+      if (meters["voltmeter"])
+      {
+        AppendMeasurementText(sb, "Node: {0}V", Voltage);
+      }
+      if (meters["ammeter"])
+      {
+        AppendMeasurementText(sb, "Node: {0}A", Current);
+      }
+      if (meters["voltmeter"] && meters["ammeter"] && meters["calculator"])
+      {
+        AppendMeasurementText(sb, "Node: {0}W", Voltage * Power);
+      }
+      if (meters["ohmmeter"])
+      {
+        AppendMeasurementText(sb, "Node: {0}Ω", Resistance);
+      }
+      if (meters["faradmeter"])
+      {
+        AppendMeasurementText(sb, "Node: {0}F", SeriesCapacitance);
+      }
+      if (meters["henrymeter"])
+      {
+        AppendMeasurementText(sb, "Node: {0}H", Inductance);
+      }
+      if (meters["ohmmeter"] && meters["ammeter"] && meters["calculator"])
+      {
+        AppendMeasurementText(sb, "Node: Parasitic {0}Ω", ParasiticResistance);
+      }
+      if (meters["faradmeter"] && meters["voltmeter"] && meters["calculator"])
+      {
+        AppendMeasurementText(sb, "Node: Parasitic {0}F", ParasiticCapacitance);
+      }
+      if (meters["thermometer"])
+      {
+        AppendMeasurementText(sb, "Node: {0}°c", "0");
+      }
+      if (!meters["voltmeter"] && !meters["ammeter"] && !meters["ohmmeter"] && !meters["faradmeter"] && !meters["henrymeter"] && !meters["thermometer"])
+      {
+        sb.AppendFormat(Lang.Get("Hold a meter tool in either hand to get a readout."), Array.Empty<object>()).AppendLine();
+      }
+    }
 
     private void AppendMeasurementText(StringBuilder sb, string key, object unit)
     {
