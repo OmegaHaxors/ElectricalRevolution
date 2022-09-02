@@ -24,19 +24,18 @@ namespace ElectricalRevolution
 		{
 			if (pos != null)
 			{
-				LightBlockEntity be = blockAccessor.GetBlockEntity(pos) as LightBlockEntity;
-				if (be != null)
-				{
-					return be.GetLightHsv();
-				}
-			}
+        if (blockAccessor.GetBlockEntity(pos) is LightBlockEntity be)
+        {
+          return be.GetLightHsv();
+        }
+      }
 			return base.GetLightHsv(blockAccessor, pos, stack);
 		}
 		public override bool OnBlockInteractStart(IWorldAccessor world, IPlayer byPlayer, BlockSelection blockSel)
 		{
 			BlockEntity blockEntity = world.BlockAccessor.GetBlockEntity(blockSel.Position);
 			LightBlockEntity LblockEntity = (LightBlockEntity)blockEntity;
-			BEBehaviorCreativeConverter behav = (blockEntity != null) ? blockEntity.GetBehavior<BEBehaviorCreativeConverter>() : null;
+			BEBehaviorCreativeConverter behav = blockEntity?.GetBehavior<BEBehaviorCreativeConverter>();
 			if (behav != null)
 			{
 				bool retvalue = behav.OnInteract(byPlayer);

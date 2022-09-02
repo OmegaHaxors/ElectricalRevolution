@@ -44,13 +44,13 @@ namespace ElectricalRevolution
 			ItemStack offhanditem = forPlayer.Entity.LeftHandItemSlot.Itemstack;
 			bool checkrighthand = false; bool checklefthand = false; ITreeAttribute rightattributes = null; ITreeAttribute leftattributes = null;
 			bool voltmeter = false; bool ammeter = false; bool calculator = false; bool ohmmeter = false; bool faradmeter = false; bool henrymeter = false; bool thermometer = false;
-			
+
 			if(forPlayer.WorldData.CurrentGameMode == EnumGameMode.Creative)
 			{
 			voltmeter=ammeter=calculator=ohmmeter=faradmeter=henrymeter=thermometer = true;
 			}else{
-			if(helditem != null && helditem.Attributes != null){checkrighthand = true; rightattributes = helditem.Attributes;}
-			if(offhanditem != null && offhanditem.Attributes != null){checklefthand = true; leftattributes = offhanditem.Attributes;}
+			if(helditem?.Attributes != null) {checkrighthand = true; rightattributes = helditem.Attributes;}
+			if(offhanditem?.Attributes != null) {checklefthand = true; leftattributes = offhanditem.Attributes;}
 			if((checkrighthand && rightattributes.HasAttribute("voltmeter"))||(checklefthand && leftattributes.HasAttribute("voltmeter"))){voltmeter = true;}
 			if((checkrighthand && rightattributes.HasAttribute("ammeter"))||(checklefthand && leftattributes.HasAttribute("ammeter"))){ammeter = true;}
 			if((checkrighthand && rightattributes.HasAttribute("calculator"))||(checklefthand && leftattributes.HasAttribute("calculator"))){calculator = true;}
@@ -65,14 +65,11 @@ namespace ElectricalRevolution
 			if(ohmmeter){sb.AppendLine(string.Format(Lang.Get("Node: {0}Ω", new object[]{this.Resistance}), Array.Empty<object>()));}
 			if(faradmeter){sb.AppendLine(string.Format(Lang.Get("Node: {0}F", new object[]{this.SeriesCapacitance}), Array.Empty<object>()));}
 			if(henrymeter){sb.AppendLine(string.Format(Lang.Get("Node: {0}H", new object[]{this.Inductance}), Array.Empty<object>()));}
-			
+
 			if(ohmmeter&&ammeter&&calculator){sb.AppendLine(string.Format(Lang.Get("Node: Parasitic {0}Ω", new object[]{this.ParasiticResistance}), Array.Empty<object>()));}
 			if(faradmeter&&voltmeter&&calculator){sb.AppendLine(string.Format(Lang.Get("Node: Parasitic {0}F", new object[]{this.ParasiticCapacitance}), Array.Empty<object>()));}
 			if(thermometer){sb.AppendLine(string.Format(Lang.Get("Node: {0}°c", new object[]{"0"}), Array.Empty<object>()));}
 			if(!voltmeter&&!ammeter&&!ohmmeter&&!faradmeter&&!henrymeter&&!thermometer){sb.AppendLine(string.Format(Lang.Get("Hold a meter tool in either hand to get a readout."), Array.Empty<object>()));}
-			
-			
-			
 		}
 		public override void FromTreeAttributes(ITreeAttribute tree, IWorldAccessor world)
 		{

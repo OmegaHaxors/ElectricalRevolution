@@ -18,19 +18,17 @@ using SpiceSharp.Simulations;
 
 namespace ElectricalRevolution
 {
-	
 	public class CreativeSource : Block
 	{
 		public override bool OnBlockInteractStart(IWorldAccessor world, IPlayer byPlayer, BlockSelection blockSel)
 		{
 			BlockEntity blockEntity = world.BlockAccessor.GetBlockEntity(blockSel.Position);
-			BEBehaviorCreativeConverter be = (blockEntity != null) ? blockEntity.GetBehavior<BEBehaviorCreativeConverter>() : null;
+			BEBehaviorCreativeConverter be = blockEntity?.GetBehavior<BEBehaviorCreativeConverter>();
 			if (be != null)
 			{
 				return be.OnInteract(byPlayer);
 			}
 			return base.OnBlockInteractStart(world, byPlayer, blockSel);
 		}
-
 	}
 }

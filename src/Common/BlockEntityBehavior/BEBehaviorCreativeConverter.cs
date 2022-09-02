@@ -39,7 +39,7 @@ namespace ElectricalRevolution
 			this.Blockentity.MarkDirty(true, null);
 			Vec3d pos = this.Blockentity.Pos.ToVec3d().Add(0.5, 0.0, 0.5);
 			LightBlockEntity lbe = Blockentity as LightBlockEntity;
-			if(lbe != null) {lbe.SetLightLevelFromVoltage(this.powerSetting);}
+			lbe?.SetLightLevelFromVoltage(this.powerSetting);
 			this.Api.World.PlaySoundAt(new AssetLocation("game:sounds/toggleswitch"), pos.X, pos.Y, pos.Z, byPlayer, false, 16f, 1f);
 			return true;
 		}

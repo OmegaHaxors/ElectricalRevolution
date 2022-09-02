@@ -40,7 +40,7 @@ namespace ElectricalRevolution
 			{
 				BlockPos pos = blockSel.Position.AddCopy(face);
 				IMechanicalPowerBlock block = world.BlockAccessor.GetBlock(pos) as IMechanicalPowerBlock;
-				if (block != null && block.HasMechPowerConnectorAt(world, pos, face.Opposite))
+				if (block?.HasMechPowerConnectorAt(world, pos, face.Opposite) == true)
 				{
 					AssetLocation loc = new AssetLocation(base.Code.Domain,base.FirstCodePart(0) + "-" + face.Opposite.Code[0].ToString() + face.Code[0].ToString());
 					Block toPlaceBlock = world.GetBlock(loc);
@@ -68,14 +68,14 @@ namespace ElectricalRevolution
 		public override void OnNeighbourBlockChange(IWorldAccessor world, BlockPos pos, BlockPos neibpos)
 		{
 			BlockEntity blockEntity = world.BlockAccessor.GetBlockEntity(pos);
-			BEBehaviorMPGenerator bempgenerator = (blockEntity != null) ? blockEntity.GetBehavior<BEBehaviorMPGenerator>() : null;
-			if (bempgenerator != null && !bempgenerator.IsAttachedToBlock())
+			BEBehaviorMPGenerator bempgenerator = blockEntity?.GetBehavior<BEBehaviorMPGenerator>();
+			if (bempgenerator?.IsAttachedToBlock() == false)
 			{
 				foreach (BlockFacing face in BlockFacing.HORIZONTALS)
 				{
 					BlockPos npos = pos.AddCopy(face);
 					BlockAngledGears blockagears = world.BlockAccessor.GetBlock(npos) as BlockAngledGears;
-					if (blockagears != null && blockagears.Facings.Contains(face.Opposite) && blockagears.Facings.Length == 1)
+					if (blockagears?.Facings.Contains(face.Opposite) == true && blockagears.Facings.Length == 1)
 					{
 						world.BlockAccessor.BreakBlock(npos, null, 1f);
 					}
@@ -86,6 +86,5 @@ namespace ElectricalRevolution
 		public override void DidConnectAt(IWorldAccessor world, BlockPos pos, BlockFacing face)
 		{
 		}
-
 	}
 }
