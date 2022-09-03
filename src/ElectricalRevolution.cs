@@ -45,6 +45,29 @@ namespace ElectricalRevolution
 			api.RegisterBlockEntityBehaviorClass("CreativeConverter",typeof(BEBehaviorCreativeConverter));
 		}
 		public override void StartClientSide(ICoreClientAPI capi){this.capi = capi;}
-		public override void StartServerSide(ICoreServerAPI sapi){this.sapi = sapi;}
+		public override void StartServerSide(ICoreServerAPI sapi)
+		{
+			this.sapi = sapi;
+			sapi.RegisterCommand("mna","Test the MNA","",(IServerPlayer splayer, int groupId, CmdArgs args) =>
+            {
+			// Build the circuit
+            var ckt = new Circuit(
+                new VoltageSource("V1", "in", "0", 0.0),
+                new Resistor("R1", "in", "out", 1.0e3),
+                new Resistor("R2", "out", "0", 2.0e3)
+                );
+
+            // Create a DC sweep and register to the event for exporting simulation data
+            var dc = new DC("dc", "V1", 0.0, 5.0, 1);
+            dc.ExportSimulationData += (sender, exportDataEventArgs) =>
+            {
+				splayer.SendMessage(GlobalConstants.GeneralChatGroup,""+exportDataEventArgs.GetVoltage("out"),EnumChatType.Notification);
+            };
+
+            // Run the simulation
+            dc.Run(ckt);
+
+			}, Privilege.chat);
+		}
 	}
 }
