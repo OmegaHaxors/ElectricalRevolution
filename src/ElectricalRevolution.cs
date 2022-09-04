@@ -45,6 +45,18 @@ namespace ElectricalRevolution
 			api.RegisterBlockEntityBehaviorClass("CreativeConverter",typeof(BEBehaviorCreativeConverter));
 		}
 		public override void StartClientSide(ICoreClientAPI capi){this.capi = capi;}
+		private IEnumerable<double> TimePoints
+        {
+            get
+            {
+                double time = 0;
+                for (var i = 0; i < 10; i++)
+                {
+                    yield return time;
+                    time += 1;
+                }    
+            }
+        }
 		public override void StartServerSide(ICoreServerAPI sapi)
 		{
 			this.sapi = sapi;
@@ -52,32 +64,30 @@ namespace ElectricalRevolution
             {
 			// Build the circuit
             var ckt = new Circuit(
-   			 new VoltageSource("V1", "in", "0",5),
+   			 new VoltageSource("V1", "in", "0",50),
    			 new Resistor("R1", "in", "-R1", 10000),
-			 new Inductor("I1", "-R1", "out", 10),
-   			 new Capacitor("C1", "out", "0", 10),
-			 new Sampler("sampler1")
+			 new Inductor("I1", "-R1", "out", 100),
+   			 new Capacitor("C1", "out", "0", 100),
+			 new Sampler("sampler1",TimePoints)
 			);
 
-			
-
-			/*
-			// Create the simulation
-			var tran = new Transient("Tran 1",1,1);
-
+			IEnumerator<double> refPoints = TimePoints.GetEnumerator();
+            var tran = new Transient("tran", 1, 1);
+			tran.TimeParameters.StopTime = 10;
 			// Make the exports
 			var inputExport = new RealVoltageExport(tran, "in");
 			var outputExport = new RealVoltageExport(tran, "out");
-
+			int inter = 0;
 			// Simulate
 			tran.ExportSimulationData += (sender, exargs) =>
 			{
   			var input = inputExport.Value;
    			var output = outputExport.Value;
-			splayer.SendMessage(GlobalConstants.GeneralChatGroup,"in:"+input + " out:" + output,EnumChatType.Notification);
-			tran.TimeParameters.StopTime = 0;
+			splayer.SendMessage(GlobalConstants.GeneralChatGroup,"in:"+input + " out:" + output + " iter:" + inter,EnumChatType.Notification);
+			inter++;
 			};
-			tran.Run(ckt);*/
+
+            tran.Run(ckt);
 
 			}, Privilege.chat);
 		}
