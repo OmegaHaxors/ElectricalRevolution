@@ -52,20 +52,32 @@ namespace ElectricalRevolution
             {
 			// Build the circuit
             var ckt = new Circuit(
-                new VoltageSource("V1", "in", "0", 0.0),
-                new Resistor("R1", "in", "out", 1.0e3),
-                new Resistor("R2", "out", "0", 2.0e3)
-                );
+   			 new VoltageSource("V1", "in", "0",5),
+   			 new Resistor("R1", "in", "-R1", 10000),
+			 new Inductor("I1", "-R1", "out", 10),
+   			 new Capacitor("C1", "out", "0", 10),
+			 new Sampler("sampler1")
+			);
 
-            // Create a DC sweep and register to the event for exporting simulation data
-            var dc = new DC("dc", "V1", 0.0, 5.0, 1);
-            dc.ExportSimulationData += (sender, exportDataEventArgs) =>
-            {
-				splayer.SendMessage(GlobalConstants.GeneralChatGroup,""+exportDataEventArgs.GetVoltage("out"),EnumChatType.Notification);
-            };
+			
 
-            // Run the simulation
-            dc.Run(ckt);
+			/*
+			// Create the simulation
+			var tran = new Transient("Tran 1",1,1);
+
+			// Make the exports
+			var inputExport = new RealVoltageExport(tran, "in");
+			var outputExport = new RealVoltageExport(tran, "out");
+
+			// Simulate
+			tran.ExportSimulationData += (sender, exargs) =>
+			{
+  			var input = inputExport.Value;
+   			var output = outputExport.Value;
+			splayer.SendMessage(GlobalConstants.GeneralChatGroup,"in:"+input + " out:" + output,EnumChatType.Notification);
+			tran.TimeParameters.StopTime = 0;
+			};
+			tran.Run(ckt);*/
 
 			}, Privilege.chat);
 		}

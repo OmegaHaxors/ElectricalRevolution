@@ -21,7 +21,7 @@ namespace ElectricalRevolution
 	public class MPGeneratorBlockEntity : BlockEntity
 	{
 		BEBehaviorMPGenerator mpc = null;
-		bool powered = false;
+		//bool powered = false;
 
 		public override void Initialize(ICoreAPI api)
 		{
@@ -41,7 +41,7 @@ namespace ElectricalRevolution
 			{
 				this.mpc.OnConnected = () =>
         {
-          this.powered = true;
+          //this.powered = true;
           /*if (this.renderer != null)
 					{
 						this.renderer.ShouldRender = true;
@@ -50,7 +50,7 @@ namespace ElectricalRevolution
         };
 				this.mpc.OnDisconnected = () =>
         {
-          this.powered = false;
+         // this.powered = false;
           /*if (this.renderer != null)
 					{
 						this.renderer.ShouldRender = false;
