@@ -53,40 +53,66 @@ namespace ElectricalRevolution
                 for (var i = 0; i < 10; i++)
                 {
                     yield return time;
-                    time += 1;
+                    time += 0.1;
                 }    
             }
         }
 		public override void StartServerSide(ICoreServerAPI sapi)
 		{
 			this.sapi = sapi;
-			sapi.RegisterCommand("mna","Test the MNA","",(IServerPlayer splayer, int groupId, CmdArgs args) =>
-            {
-			// Build the circuit
-            var ckt = new Circuit(
-   			 new VoltageSource("V1", "in", "0",50),
-   			 new Resistor("R1", "in", "-R1", 10000),
-			 new Inductor("I1", "-R1", "out", 100),
-   			 new Capacitor("C1", "out", "0", 100),
-			 new Sampler("sampler1",TimePoints)
-			);
 
+			int sampleriters = 0;
+			RealVoltageExport inputExport = null;
+			RealVoltageExport outputExport = null;
+			VoltageSource voltagein = null;
+			Resistor resistor = null;
+			Inductor inductor = null;
+			Capacitor capacitor = null;
+			float voltagesetting = 0;
+			float inductorstorage = 0;
+			float capacitorstorage = 0;
+			bool tranrunning = false;
+
+			var ckt = new Circuit(
+   			 voltagein = new VoltageSource("V1", "in", "0",0),
+   			 resistor = new Resistor("R1", "in", "-R1", 1),
+			 inductor = new Inductor("I1", "-R1", "out", 1),
+   			 capacitor = new Capacitor("C1", "out", "0", 1),
+			 new Sampler("sampler1",TimePoints, (sender, exargs) =>
+                {
+					sampleriters++;
+					sapi.BroadcastMessageToAllGroups("value:" + outputExport.Value + " ticked " + sampleriters,EnumChatType.Notification);
+					if(sampleriters >= 10)
+					{
+						sampleriters = 0;
+						tranrunning = false;
+					}
+				})
+			);
 			IEnumerator<double> refPoints = TimePoints.GetEnumerator();
             var tran = new Transient("tran", 1, 1);
-			tran.TimeParameters.StopTime = 10;
+
 			// Make the exports
-			var inputExport = new RealVoltageExport(tran, "in");
-			var outputExport = new RealVoltageExport(tran, "out");
+			inputExport = new RealVoltageExport(tran, "in");
+			outputExport = new RealVoltageExport(tran, "out");
 			int inter = 0;
-			// Simulate
 			tran.ExportSimulationData += (sender, exargs) =>
 			{
   			var input = inputExport.Value;
    			var output = outputExport.Value;
-			splayer.SendMessage(GlobalConstants.GeneralChatGroup,"in:"+input + " out:" + output + " iter:" + inter,EnumChatType.Notification);
+			//splayer.SendMessage(GlobalConstants.GeneralChatGroup,"in:"+input + " out:" + output + " stoptime:" + tran.TimeParameters.StopTime + " iter:" + inter,EnumChatType.Notification);
 			inter++;
+			tran.TimeParameters.StopTime -= 1;
+			voltagein.Parameters.DcValue = voltagesetting;
+			if(tranrunning == false){tran.TimeParameters.StopTime = 0;}
 			};
 
+			sapi.RegisterCommand("mna","Test the MNA","",(IServerPlayer splayer, int groupId, CmdArgs args) =>
+            {
+			
+			tran.TimeParameters.StopTime = 100;
+			if(args.Length > 0){Single.TryParse(args[0],out voltagesetting);}
+			tranrunning = true;
             tran.Run(ckt);
 
 			}, Privilege.chat);
