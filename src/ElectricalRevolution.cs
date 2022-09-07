@@ -83,12 +83,13 @@ namespace ElectricalRevolution
 					sampleriters++;
 					inductorcurrent = currentexport.Value;
 					capacitorvoltage = outputExport.Value;
-					//sapi.BroadcastMessageToAllGroups("value:" + outputExport.Value + " ticked " + sampleriters,EnumChatType.Notification);
-					sapi.BroadcastMessageToAllGroups("inductor:" + inductorcurrent + " capacitor:" + capacitorvoltage,EnumChatType.Notification);
+					
 
 					if(sampleriters >= 10)
 					{
 						sampleriters = 0;
+						sapi.BroadcastMessageToAllGroups("value:" + outputExport.Value + " ticked " + sampleriters,EnumChatType.Notification);
+						sapi.BroadcastMessageToAllGroups("inductor:" + inductorcurrent + " capacitor:" + capacitorvoltage,EnumChatType.Notification);
 					}
 				})
 			);
@@ -106,7 +107,7 @@ namespace ElectricalRevolution
 			{
   			double input = inputExport.Value;
    			double output = outputExport.Value;
-			sapi.BroadcastMessageToAllGroups("in:"+input + " out:" + output + " current" + currentexport.Value + " iter:" + inter,EnumChatType.Notification);
+			//sapi.BroadcastMessageToAllGroups("in:"+input + " out:" + output + " current" + currentexport.Value + " iter:" + inter,EnumChatType.Notification);
 			inter++;
 			voltagein.Parameters.DcValue = voltagesetting;
 			tran.TimeParameters.StopTime -= 1;
@@ -130,6 +131,19 @@ namespace ElectricalRevolution
             tran.Run(ckt);
 
 			}, Privilege.chat);
+			sapi.RegisterCommand("here","Where am I? In text form","",(IServerPlayer splayer, int groupId, CmdArgs args) =>
+            {
+				BlockPos blockpos = splayer.Entity.Pos.AsBlockPos;
+				Vec3i subblockpos = new Vec3i(0,0,0);
+
+				string message = pinname(blockpos,subblockpos);
+				splayer.SendMessage(GlobalConstants.GeneralChatGroup,message,EnumChatType.CommandSuccess);
+			}, Privilege.chat);
+		}
+		public string pinname(BlockPos blockpos, Vec3i subblockpos) //who you callin pinname?
+		{
+			string returnstring = "" + blockpos + " (" + subblockpos.X + ", " + subblockpos.Y + ", "+ subblockpos.Z + ")";
+			return returnstring;
 		}
 	}
 }
