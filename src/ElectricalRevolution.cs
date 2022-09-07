@@ -64,7 +64,7 @@ namespace ElectricalRevolution
 			RealVoltageExport inputExport = null;
 			RealVoltageExport outputExport = null;
 			RealCurrentExport currentexport = null;
-			VoltageSource voltagein = null;
+			//VoltageSource voltagein = null;
 			/*Resistor resistor = null;
 			Inductor inductor = null;
 			Capacitor capacitor = null; */
@@ -79,7 +79,7 @@ namespace ElectricalRevolution
 			double inductorcurrent = 0; //todo: save to world
 
 			var ckt = new Circuit(
-   			 voltagein = new VoltageSource(voltagenodename,GetPositivePin(voltagenodename),GetNegativePin(voltagenodename),0),
+   			 new VoltageSource(voltagenodename,GetPositivePin(voltagenodename),GetNegativePin(voltagenodename),0),
    			 new Resistor(resistornodename,GetPositivePin(resistornodename),GetNegativePin(resistornodename),1),
 			 new Inductor(inductornodename,GetPositivePin(inductornodename),GetNegativePin(inductornodename),1),
    			 new Capacitor(capacitornodename,GetPositivePin(capacitornodename),GetNegativePin(capacitornodename),1),
@@ -112,12 +112,12 @@ namespace ElectricalRevolution
    			double output = outputExport.Value;
 			//sapi.BroadcastMessageToAllGroups("in:"+input + " out:" + output + " current" + currentexport.Value + " iter:" + inter,EnumChatType.Notification);
 			inter++;
-			voltagein.Parameters.DcValue = voltagesetting;
+			ckt.TryGetEntity(voltagenodename, out var voltagenode);
+			voltagenode.SetParameter("dc",voltagesetting);
 			tran.TimeParameters.StopTime -= 1;
 			if(sampleriters >= 9)
 			{
 				inter = 0;
-				//voltagein.Parameters.DcValue = 0; delete this?
 				tran.TimeParameters.StopTime = 0;
 			}
 			};
@@ -129,10 +129,14 @@ namespace ElectricalRevolution
 			if(args.Length > 0){Double.TryParse(args[0],out voltagesetting);}
 			tran.TimeParameters.UseIc = true; //ESSENTIAL!!
 			//tran.TimeParameters.InitialConditions[voltagenodename] = voltagesetting;
-			voltagein.Parameters.DcValue = voltagesetting;
-			tran.TimeParameters.InitialConditions[GetPositivePin(capacitornodename)] = capacitorvoltage;
+			//voltagein.Parameters.DcValue = voltagesetting;
+			ckt.TryGetEntity(voltagenodename, out var voltagenode);
+			voltagenode.SetParameter("dc",voltagesetting);
+			ckt.TryGetEntity(capacitornodename, out var capacitornode);
+			capacitornode.SetParameter("ic",capacitorvoltage);
 			//capacitor.Parameters.InitialCondition = capacitorvoltage;
-			tran.TimeParameters.InitialConditions[inductornodename] = inductorcurrent;
+			ckt.TryGetEntity(inductornodename, out var inductornode);
+			inductornode.SetParameter("ic",inductorcurrent);
 			//inductor.Parameters.InitialCondition = inductorcurrent;
             tran.Run(ckt);
 
