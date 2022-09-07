@@ -61,35 +61,38 @@ namespace ElectricalRevolution
 		{
 			this.sapi = sapi;
 
-			int sampleriters = 0;
 			RealVoltageExport inputExport = null;
 			RealVoltageExport outputExport = null;
 			RealCurrentExport currentexport = null;
 			VoltageSource voltagein = null;
-			Resistor resistor = null;
+			/*Resistor resistor = null;
 			Inductor inductor = null;
-			Capacitor capacitor = null;
-			float voltagesetting = 0;
-			double inductorcurrent = 0;
-			double capacitorvoltage = 0;
+			Capacitor capacitor = null; */
+
+			int sampleriters = 0;
+			string voltagenodename = GetNodeNameFromPins(GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(0,0,0)),"0");
+			string resistornodename = GetNodeNameFromPins(GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(0,0,0)),GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(1,0,0)));
+			string inductornodename = GetNodeNameFromPins(GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(1,0,0)),GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)));
+			string capacitornodename = GetNodeNameFromPins(GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)),"0");
+			double voltagesetting = 0; //todo: save to world
+			double capacitorvoltage = 0; //todo: save to world
+			double inductorcurrent = 0; //todo: save to world
 
 			var ckt = new Circuit(
-   			 voltagein = new VoltageSource("V1", "in", "0",0),
-   			 resistor = new Resistor("R1", "in", "-R1", 1),
-			 inductor = new Inductor("I1", "-R1", "out", 1),
-   			 capacitor = new Capacitor("C1", "out", "0", 1),
+   			 voltagein = new VoltageSource(voltagenodename,GetPositivePin(voltagenodename),GetNegativePin(voltagenodename),0),
+   			 new Resistor(resistornodename,GetPositivePin(resistornodename),GetNegativePin(resistornodename),1),
+			 new Inductor(inductornodename,GetPositivePin(inductornodename),GetNegativePin(inductornodename),1),
+   			 new Capacitor(capacitornodename,GetPositivePin(capacitornodename),GetNegativePin(capacitornodename),1),
 			 new Sampler("sampler1",TimePoints, (sender, exargs) =>
                 {
-					sampleriters++;
 					inductorcurrent = currentexport.Value;
 					capacitorvoltage = outputExport.Value;
-					
-
+					sampleriters++;
 					if(sampleriters >= 10)
 					{
-						sampleriters = 0;
 						sapi.BroadcastMessageToAllGroups("value:" + outputExport.Value + " ticked " + sampleriters,EnumChatType.Notification);
 						sapi.BroadcastMessageToAllGroups("inductor:" + inductorcurrent + " capacitor:" + capacitorvoltage,EnumChatType.Notification);
+						sampleriters = 0;
 					}
 				})
 			);
@@ -97,12 +100,12 @@ namespace ElectricalRevolution
             var tran = new Transient("tran", 1, 1);
 
 			// Make the exports
-			var inductorprop = new RealPropertyExport(tran,"I1","current");
-			inputExport = new RealVoltageExport(tran, "in");
-			outputExport = new RealVoltageExport(tran, "out");
-			currentexport = new RealCurrentExport(tran,"I1");
-			
+			var inductorprop = new RealPropertyExport(tran,inductornodename,"current");
+			inputExport = new RealVoltageExport(tran, GetPositivePin(voltagenodename));
+			outputExport = new RealVoltageExport(tran, GetPositivePin(capacitornodename));
+			currentexport = new RealCurrentExport(tran,inductornodename);
 			int inter = 0;
+
 			tran.ExportSimulationData += (sender, exargs) =>
 			{
   			double input = inputExport.Value;
@@ -114,7 +117,7 @@ namespace ElectricalRevolution
 			if(sampleriters >= 9)
 			{
 				inter = 0;
-				voltagein.Parameters.DcValue = 0;
+				//voltagein.Parameters.DcValue = 0; delete this?
 				tran.TimeParameters.StopTime = 0;
 			}
 			};
@@ -123,27 +126,54 @@ namespace ElectricalRevolution
             {
 			
 			tran.TimeParameters.StopTime = 100;
-			if(args.Length > 0){Single.TryParse(args[0],out voltagesetting);}
+			if(args.Length > 0){Double.TryParse(args[0],out voltagesetting);}
 			tran.TimeParameters.UseIc = true; //ESSENTIAL!!
+			//tran.TimeParameters.InitialConditions[voltagenodename] = voltagesetting;
 			voltagein.Parameters.DcValue = voltagesetting;
-			capacitor.Parameters.InitialCondition = capacitorvoltage;
-			inductor.Parameters.InitialCondition = inductorcurrent;
+			tran.TimeParameters.InitialConditions[GetPositivePin(capacitornodename)] = capacitorvoltage;
+			//capacitor.Parameters.InitialCondition = capacitorvoltage;
+			tran.TimeParameters.InitialConditions[inductornodename] = inductorcurrent;
+			//inductor.Parameters.InitialCondition = inductorcurrent;
             tran.Run(ckt);
 
 			}, Privilege.chat);
-			sapi.RegisterCommand("here","Where am I? In text form","",(IServerPlayer splayer, int groupId, CmdArgs args) =>
+			sapi.RegisterCommand("here","Where am I? answered in text form","",(IServerPlayer splayer, int groupId, CmdArgs args) =>
             {
 				BlockPos blockpos = splayer.Entity.Pos.AsBlockPos;
 				Vec3i subblockpos = new Vec3i(0,0,0);
 
-				string message = pinname(blockpos,subblockpos);
+				string message = GetPinNameAtPosition(blockpos,subblockpos);
+				string nodename = GetNodeNameFromPins(GetPinNameAtPosition(blockpos,subblockpos),GetPinNameAtPosition(blockpos,subblockpos.AddCopy(1,0,0)));
+				string pospinname = GetPositivePin(nodename);
+				string negpinname = GetNegativePin(nodename);
 				splayer.SendMessage(GlobalConstants.GeneralChatGroup,message,EnumChatType.CommandSuccess);
+				splayer.SendMessage(GlobalConstants.GeneralChatGroup,nodename,EnumChatType.CommandSuccess);
+				splayer.SendMessage(GlobalConstants.GeneralChatGroup,pospinname,EnumChatType.CommandSuccess);
+				splayer.SendMessage(GlobalConstants.GeneralChatGroup,negpinname,EnumChatType.CommandSuccess);
 			}, Privilege.chat);
 		}
-		public string pinname(BlockPos blockpos, Vec3i subblockpos) //who you callin pinname?
+		public string GetPinNameAtPosition(BlockPos blockpos, Vec3i subblockpos) //Converts blockpos and subblockpos into a pin
 		{
+			if(blockpos == null || subblockpos == null){return "0";}
 			string returnstring = "" + blockpos + " (" + subblockpos.X + ", " + subblockpos.Y + ", "+ subblockpos.Z + ")";
 			return returnstring;
+		}
+		public string GetNodeNameFromPins(string pinnamepos, string pinnameneg) //Converts a pinpos and a pinneg into a nodename
+		{
+			string returnstring = pinnamepos + "~" + pinnameneg;
+			return returnstring;
+		}
+		public string GetPositivePin(string nodename) //Extracts the positive pin from a node's name.
+		{
+			string returnstring = nodename;
+			int stopat = returnstring.IndexOf("~");
+			return returnstring.Substring(0, stopat);
+		}
+		public string GetNegativePin(string nodename) //Extracts the negative pin from the node's name.
+		{
+			string returnstring = nodename;
+			int startat = returnstring.IndexOf("~") + 1;
+			return returnstring.Substring(startat);
 		}
 	}
 }
