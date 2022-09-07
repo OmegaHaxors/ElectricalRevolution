@@ -83,7 +83,7 @@ namespace ElectricalRevolution
    			 new Resistor(resistornodename,GetPositivePin(resistornodename),GetNegativePin(resistornodename),1),
 			 new Inductor(inductornodename,GetPositivePin(inductornodename),GetNegativePin(inductornodename),1),
    			 new Capacitor(capacitornodename,GetPositivePin(capacitornodename),GetNegativePin(capacitornodename),1),
-			 new Sampler("sampler1",TimePoints, (sender, exargs) =>
+			 new Sampler("sampler",TimePoints, (sender, exargs) =>
                 {
 					inductorcurrent = currentexport.Value;
 					capacitorvoltage = outputExport.Value;
@@ -112,8 +112,7 @@ namespace ElectricalRevolution
    			double output = outputExport.Value;
 			//sapi.BroadcastMessageToAllGroups("in:"+input + " out:" + output + " current" + currentexport.Value + " iter:" + inter,EnumChatType.Notification);
 			inter++;
-			ckt.TryGetEntity(voltagenodename, out var voltagenode);
-			voltagenode.SetParameter("dc",voltagesetting);
+			//ckt.TryGetEntity(voltagenodename, out var voltagenode); voltagenode.SetParameter("dc",voltagesetting);
 			tran.TimeParameters.StopTime -= 1;
 			if(sampleriters >= 9)
 			{
@@ -122,23 +121,23 @@ namespace ElectricalRevolution
 			}
 			};
 
+			sapi.World.RegisterGameTickListener(TickMNA,1000); //tick the MNA every second
+
 			sapi.RegisterCommand("mna","Test the MNA","",(IServerPlayer splayer, int groupId, CmdArgs args) =>
             {
 			
 			tran.TimeParameters.StopTime = 100;
 			if(args.Length > 0){Double.TryParse(args[0],out voltagesetting);}
 			tran.TimeParameters.UseIc = true; //ESSENTIAL!!
-			//tran.TimeParameters.InitialConditions[voltagenodename] = voltagesetting;
-			//voltagein.Parameters.DcValue = voltagesetting;
-			ckt.TryGetEntity(voltagenodename, out var voltagenode);
-			voltagenode.SetParameter("dc",voltagesetting);
-			ckt.TryGetEntity(capacitornodename, out var capacitornode);
-			capacitornode.SetParameter("ic",capacitorvoltage);
-			//capacitor.Parameters.InitialCondition = capacitorvoltage;
-			ckt.TryGetEntity(inductornodename, out var inductornode);
-			inductornode.SetParameter("ic",inductorcurrent);
-			//inductor.Parameters.InitialCondition = inductorcurrent;
+			ckt.TryGetEntity(voltagenodename, out var voltagenode); voltagenode.SetParameter("dc",voltagesetting);
+			ckt.TryGetEntity(capacitornodename, out var capacitornode); capacitornode.SetParameter("ic",capacitorvoltage);
+			ckt.TryGetEntity(inductornodename, out var inductornode); inductornode.SetParameter("ic",inductorcurrent);
             tran.Run(ckt);
+
+			//try and save this MNA to the world? What could go wrong.
+			//sapi.WorldManager.SaveGame.StoreData("ckt",SerializerUtil.Serialize<Circuit>(ckt));
+			//sapi.WorldManager.SaveGame.StoreData("tran",SerializerUtil.Serialize<Transient>(tran));
+			//everything.
 
 			}, Privilege.chat);
 			sapi.RegisterCommand("here","Where am I? answered in text form","",(IServerPlayer splayer, int groupId, CmdArgs args) =>
@@ -155,6 +154,14 @@ namespace ElectricalRevolution
 				splayer.SendMessage(GlobalConstants.GeneralChatGroup,pospinname,EnumChatType.CommandSuccess);
 				splayer.SendMessage(GlobalConstants.GeneralChatGroup,negpinname,EnumChatType.CommandSuccess);
 			}, Privilege.chat);
+		}
+		public void TickMNA(float par) //NYI
+		{
+
+			//if(cktdata != null){ckt = SerializerUtil.Deserialize<Circuit>(sapi.WorldManager.SaveGame.GetData("ckt"));}
+			//if(trandata != null){tran = SerializerUtil.Deserialize<Transient>(sapi.WorldManager.SaveGame.GetData("tran"));}
+			//if(cktdata != null){cktdata = SerializerUtil.Serialize<Circuit>(ckt); sapi.WorldManager.SaveGame.StoreData("ckt",cktdata);}
+			//if(trandata != null){trandata = SerializerUtil.Serialize<Transient>(tran);sapi.WorldManager.SaveGame.StoreData("tran",trandata);}
 		}
 		public string GetPinNameAtPosition(BlockPos blockpos, Vec3i subblockpos) //Converts blockpos and subblockpos into a pin
 		{
