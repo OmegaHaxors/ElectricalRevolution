@@ -58,9 +58,9 @@ namespace ElectricalRevolution
             }
         }
 		public Circuit ckt = new Circuit();
-		public RealVoltageExport inputExport = null;
-		public RealVoltageExport outputExport = null;
-		public RealCurrentExport currentexport = null;
+		//public RealVoltageExport inputExport = null;
+		//public RealVoltageExport outputExport = null;
+		//public RealCurrentExport currentexport = null;
 		public int sampleriters = 0;
 		public int inter = 0;
 		public double voltagesetting = 0; //todo: save to world
@@ -113,8 +113,8 @@ namespace ElectricalRevolution
 			}
 		}
 		public void OnMNAExport(object sender, ExportDataEventArgs exargs){
-  			double input = inputExport.Value;
-   			double output = outputExport.Value;
+  			//double input = inputExport.Value;
+   			//double output = outputExport.Value;
 			//sapi.BroadcastMessageToAllGroups("in:"+input + " out:" + output + " current" + currentexport.Value + " iter:" + inter,EnumChatType.Notification);
 			//ckt.TryGetEntity(voltagenodename, out var voltagenode); voltagenode.SetParameter("dc",voltagesetting);
 			//tran.TimeParameters.StopTime -= 1;
@@ -123,8 +123,8 @@ namespace ElectricalRevolution
 			{
 				inter = 0;
 				tran.TimeParameters.StopTime = 0;
-				inductorcurrent = currentexport.Value;
-				capacitorvoltage = outputExport.Value;
+				//inductorcurrent = currentexport.Value;
+				//capacitorvoltage = outputExport.Value;
 			}
 		}
 		public override void StartServerSide(ICoreServerAPI sapi)
@@ -189,7 +189,7 @@ namespace ElectricalRevolution
 			/*ckt.TryGetEntity(voltagenodename, out var voltagenode); voltagenode.SetParameter("dc",voltagesetting);
 			ckt.TryGetEntity(capacitornodename, out var capacitornode); capacitornode.SetParameter("ic",capacitorvoltage);
 			ckt.TryGetEntity(inductornodename, out var inductornode); inductornode.SetParameter("ic",inductorcurrent); */
-
+			CreateCircuit();
             tran.Run(ckt);
 
 			//if(cktdata != null){ckt = SerializerUtil.Deserialize<Circuit>(sapi.WorldManager.SaveGame.GetData("ckt"));}
@@ -219,7 +219,8 @@ namespace ElectricalRevolution
 			string returnstring = nodename;
 			int startat = returnstring.IndexOf(":") + 1;
 			int stopat = returnstring.IndexOf("~");
-			return returnstring.Substring(startat, stopat);
+			int length = stopat-startat;
+			return returnstring.Substring(startat, length);
 		}
 		public string GetNegativePin(string nodename) //Extracts the negative pin from the node's name.
 		{
