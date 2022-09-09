@@ -109,6 +109,11 @@ namespace ElectricalRevolution
 					ICWatchers.Add(componentname,new RealVoltageExport(tran,GetPositivePin(componentname))); //lets us get voltage later
 					break;
 
+					case "Diode":
+					ckt.Add(component as Diode);
+					ckt.Add(CreateDiodeModel(component.Name));
+					break;
+
 					default:
 					break;
 				}
@@ -145,11 +150,15 @@ namespace ElectricalRevolution
 			
 			string voltagename = GetNodeNameFromPins("VoltageSource",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(0,0,0)),"0");
 			string resistorname = GetNodeNameFromPins("Resistor",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(0,0,0)),GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(1,0,0)));
-			string inductorname = GetNodeNameFromPins("Inductor",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(1,0,0)),GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)));
-			string capacitorname = GetNodeNameFromPins("Capacitor",GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)),"0");
+			string diodename = GetNodeNameFromPins("Diode",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(1,0,0)),GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)));
+			DiodeModel diodemodel = CreateDiodeModel(diodename);
+			string diodemodelname = diodemodel.Name;
+			string inductorname = GetNodeNameFromPins("Inductor",GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)),GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(1,0,0)));
+			string capacitorname = GetNodeNameFromPins("Capacitor",GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(1,0,0)),"0");
+			
 			//make some basic components, you know, for testing.
 			componentlist.Add(voltagename, new VoltageSource(voltagename,GetPositivePin(voltagename),GetNegativePin(voltagename),1));
-			componentlist.Add(resistorname, new Resistor(resistorname,GetPositivePin(resistorname),GetNegativePin(resistorname),1));
+			componentlist.Add(diodename, new Diode(diodename,GetPositivePin(diodename),GetNegativePin(diodename),diodemodelname));
 			componentlist.Add(inductorname, new Inductor(inductorname,GetPositivePin(inductorname),GetNegativePin(inductorname),1));
 			componentlist.Add(capacitorname, new Capacitor(capacitorname,GetPositivePin(capacitorname),GetNegativePin(capacitorname),1));
 
@@ -214,6 +223,17 @@ namespace ElectricalRevolution
 			//if(cktdata != null){cktdata = SerializerUtil.Serialize<Circuit>(ckt); sapi.WorldManager.SaveGame.StoreData("ckt",cktdata);}
 			//if(trandata != null){trandata = SerializerUtil.Serialize<Transient>(tran);sapi.WorldManager.SaveGame.StoreData("tran",trandata);}
 		}
+		public DiodeModel CreateDiodeModel(string name)
+        {
+            var diodemodel = new DiodeModel(name + "#diodemodel"); //the parameters of a standard silicon diode
+            diodemodel.SetParameter("Is",2.52e-9); //SaturationCurrent
+			diodemodel.SetParameter("Rs",0.568); //Resistance
+			diodemodel.SetParameter("N",1.752); //emission coefficient
+			diodemodel.SetParameter("Cjo",4e-12); //junction capacitance
+			diodemodel.SetParameter("M",0.4); //grading coefficient
+			diodemodel.SetParameter("tt",20e-9); //transit time
+            return diodemodel;
+        }
 		public string GetPinNameAtPosition(BlockPos blockpos, Vec3i subblockpos) //Converts blockpos and subblockpos into a pin
 		{
 			if(blockpos == null || subblockpos == null){return "0";}
