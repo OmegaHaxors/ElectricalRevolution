@@ -165,8 +165,14 @@ namespace ElectricalRevolution
 
 			string capacitorname = GetNodeNameFromPins("Capacitor",GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)),"0");
 			string inductorname = GetNodeNameFromPins("Inductor",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(1,0,0)),GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)));
-			double capacitorreadout = ICWatchers[capacitorname].Value;
-			double inductorreadout = ICWatchers[inductorname].Value;
+			//double inductorreadout = ICWatchers[inductorname].Value;
+			//double capacitorreadout = ICWatchers[capacitorname].Value;
+			ckt.TryGetEntity(capacitorname, out SpiceSharp.Entities.IEntity node);
+			if(!node.TryGetProperty("ic", out double nodeic)){throw new NullReferenceException("MNA command couldn't get the property: ic");}
+			double capacitorreadout = nodeic;
+			ckt.TryGetEntity(inductorname, out node);
+			if(!node.TryGetProperty("ic", out nodeic)){throw new NullReferenceException("MNA command couldn't get the property: ic");}
+			double inductorreadout = nodeic;
 			sapi.BroadcastMessageToAllGroups("capacitor: "+capacitorreadout+" inductor: "+inductorreadout,EnumChatType.CommandSuccess);
 
 
