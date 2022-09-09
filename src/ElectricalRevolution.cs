@@ -63,7 +63,7 @@ namespace ElectricalRevolution
 		//public RealCurrentExport currentexport = null;
 		public Transient tran = new Transient("tran", 1, 1);
 		public Dictionary<string,SpiceSharp.Entities.IEntity> componentlist = new Dictionary<string,SpiceSharp.Entities.IEntity>();
-		public Dictionary<string,Export<IBiasingSimulation, double>> ICwatchers = new Dictionary<string,Export<IBiasingSimulation, double>>();
+		public Dictionary<string,Export<IBiasingSimulation, double>> ICWatchers = new Dictionary<string,Export<IBiasingSimulation, double>>();
 		public int sampleriters = 0;
 		
 		public void CreateCircuit()
@@ -101,12 +101,12 @@ namespace ElectricalRevolution
 
 					case "Inductor":
 					ckt.Add(component as Inductor);
-					ICwatchers.Add(componentname,new RealCurrentExport(tran,componentname)); //lets us get current later
+					ICWatchers.Add(componentname,new RealCurrentExport(tran,componentname)); //lets us get current later
 					break;
 
 					case "Capacitor":
 					ckt.Add(component as Capacitor);
-					ICwatchers.Add(componentname,new RealVoltageExport(tran,GetPositivePin(componentname))); //lets us get voltage later
+					ICWatchers.Add(componentname,new RealVoltageExport(tran,GetPositivePin(componentname))); //lets us get voltage later
 					break;
 
 					default:
@@ -120,19 +120,22 @@ namespace ElectricalRevolution
 
 			if(sampleriters >= 10)
 			{
-			string capacitorname = GetNodeNameFromPins("Capacitor",GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)),"0");
-			string inductorname = GetNodeNameFromPins("Inductor",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(1,0,0)),GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)));
-			double capacitorreadout = new RealVoltageExport(tran,GetPositivePin(capacitorname)).Value;
-			double inductorreadout = new RealCurrentExport(tran,inductorname).Value;
-			ckt.TryGetEntity(capacitorname, out SpiceSharp.Entities.IEntity capacitor);
-			ckt.TryGetEntity(inductorname, out SpiceSharp.Entities.IEntity inductor);
-			capacitor.SetParameter("ic",capacitorreadout);
-			inductor.SetParameter("ic",inductorreadout);
-
-			
-			sapi.BroadcastMessageToAllGroups("capacitor: "+capacitorreadout+" inductor: "+inductorreadout,EnumChatType.CommandSuccess);
 			tran.TimeParameters.StopTime = 0; //stop the simulation
+			MNAFinish(); //Tell the MNA to upload the information from this tick into the next so that it can pass on.
 			sampleriters = 0;
+			}
+		}
+		public void MNAFinish() //finish the tick then shut down
+		{
+			foreach(KeyValuePair<string,Export<IBiasingSimulation, double>> entry in ICWatchers)
+			{
+				string nodename = entry.Key;
+				double readout = entry.Value.Value; //awkwaaard
+				ckt.TryGetEntity(nodename, out SpiceSharp.Entities.IEntity node);
+				node.SetParameter("ic",ICWatchers[nodename].Value);
+				//sapi.BroadcastMessageToAllGroups(GetNodeTypeFromName(nodename) + ": " + ICWatchers[nodename].Value,EnumChatType.CommandSuccess);
+				//BlockPos blockpos = new BlockPos()
+				//todo: cast the information onto its block
 			}
 		}
 		public override void StartServerSide(ICoreServerAPI sapi)
@@ -159,6 +162,12 @@ namespace ElectricalRevolution
 			ckt.TryGetEntity(GetNodeNameFromPins("VoltageSource",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(0,0,0)),"0"), out SpiceSharp.Entities.IEntity component);
 			if(!component.TrySetParameter("dc",dcsetting)){throw new NullReferenceException("MNA command couldn't set the parameter: dc");}
 			}
+
+			string capacitorname = GetNodeNameFromPins("Capacitor",GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)),"0");
+			string inductorname = GetNodeNameFromPins("Inductor",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(1,0,0)),GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)));
+			double capacitorreadout = ICWatchers[capacitorname].Value;
+			double inductorreadout = ICWatchers[inductorname].Value;
+			sapi.BroadcastMessageToAllGroups("capacitor: "+capacitorreadout+" inductor: "+inductorreadout,EnumChatType.CommandSuccess);
 
 
 			//try and save this MNA to the world? What could go wrong.
