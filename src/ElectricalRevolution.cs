@@ -61,16 +61,10 @@ namespace ElectricalRevolution
 		//public RealVoltageExport inputExport = null;
 		//public RealVoltageExport outputExport = null;
 		//public RealCurrentExport currentexport = null;
-		public int sampleriters = 0;
-		public int inter = 0;
-		//public double voltagesetting = 0; //todo: save to world
-		//public double capacitorvoltage = 0; //todo: save to world
-		//public double inductorcurrent = 0; //todo: save to world
 		public Transient tran = new Transient("tran", 1, 1);
-		public Dictionary<string,double> componentlist = new Dictionary<string,double>();
-		public Dictionary<string,double> componentvalues = new Dictionary<string,double>();
-		public Dictionary<string,RealVoltageExport> voltagewatchers = new Dictionary<string,RealVoltageExport>();
-		public Dictionary<string,RealCurrentExport> currentwatchers = new Dictionary<string,RealCurrentExport>();
+		public Dictionary<string,SpiceSharp.Entities.IEntity> componentlist = new Dictionary<string,SpiceSharp.Entities.IEntity>();
+		public Dictionary<string,Export<IBiasingSimulation, double>> ICwatchers = new Dictionary<string,Export<IBiasingSimulation, double>>();
+		public int sampleriters = 0;
 		
 		public void CreateCircuit()
 		{
@@ -78,129 +72,83 @@ namespace ElectricalRevolution
 			ckt = new Circuit
 			(new Sampler("sampler",TimePoints, (sender, exargs) =>
                 {
-					sampleriters++;
-					if(sampleriters >= 10)
-					{
-						double dcsetting = componentvalues[GetNodeNameFromPins("VoltageSource",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(0,0,0)),"0")];
-						double inductorcurrent = componentvalues[GetNodeNameFromPins("Inductor",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(1,0,0)),GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)))];
-						double capacitorvoltage = componentvalues[GetNodeNameFromPins("Capacitor",GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)),"0")];
-						sapi.BroadcastMessageToAllGroups("DC setting:" + dcsetting + " ticked " + sampleriters,EnumChatType.Notification);
-						sapi.BroadcastMessageToAllGroups("inductor:" + inductorcurrent + " capacitor:" + capacitorvoltage,EnumChatType.Notification);
-						sampleriters = 0;
-					}
+						sampleriters++;
+						//double dcsetting = ICwatchers[GetNodeNameFromPins("VoltageSource",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(0,0,0)),"0")].Value;
+						/*double dcsetting = 100; //for now, hard code it to 100
+						double inductorcurrent = ICwatchers[GetNodeNameFromPins("Inductor",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(1,0,0)),GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)))].Value;
+						double capacitorvoltage = ICwatchers[GetNodeNameFromPins("Capacitor",GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)),"0")].Value;
+						sapi.BroadcastMessageToAllGroups("DC setting:" + dcsetting,EnumChatType.Notification);
+						sapi.BroadcastMessageToAllGroups("inductor:" + inductorcurrent + " capacitor:" + capacitorvoltage,EnumChatType.Notification);*/
+						//discontinuing sampler readouts. Get your data from Export event.
 				})
 			);}
-			foreach(KeyValuePair<string,double> entry in componentlist)
+			foreach(KeyValuePair<string,SpiceSharp.Entities.IEntity> entry in componentlist)
 			{
 				string componentname = entry.Key;
-				double cvalue = entry.Value;
+				SpiceSharp.Entities.IEntity component = entry.Value;
 				string componenttype = GetNodeTypeFromName(componentname);
-				if(ckt.TryGetEntity(componentname, out var throwaway)){return;}//only add to the ckt if it wasn't there before
+				if(ckt.TryGetEntity(componentname, out var throwaway)){break;}//only add to the ckt if it wasn't there before
 				switch(componenttype)
 				{
 					case "VoltageSource":
-					ckt.Add(new VoltageSource(componentname,GetPositivePin(componentname),GetNegativePin(componentname),cvalue));
+					//ckt.Add(new VoltageSource(componentname,GetPositivePin(componentname),GetNegativePin(componentname),cvalue));
+					ckt.Add(component as VoltageSource);
 					break;
 
 					case "Resistor":
-					ckt.Add(new Resistor(componentname,GetPositivePin(componentname),GetNegativePin(componentname),cvalue));
+					ckt.Add(component as Resistor);
 					break;
 
 					case "Inductor":
-					ckt.Add(new Inductor(componentname,GetPositivePin(componentname),GetNegativePin(componentname),cvalue));
+					ckt.Add(component as Inductor);
+					ICwatchers.Add(componentname,new RealCurrentExport(tran,componentname)); //lets us get current later
 					break;
 
 					case "Capacitor":
-					ckt.Add(new Capacitor(componentname,GetPositivePin(componentname),GetNegativePin(componentname),cvalue));
+					ckt.Add(component as Capacitor);
+					ICwatchers.Add(componentname,new RealVoltageExport(tran,GetPositivePin(componentname))); //lets us get voltage later
 					break;
 
 					default:
 					break;
 				}
-				voltagewatchers.Add(componentname,new RealVoltageExport(tran,componentname)); //lets us get voltage later
-				currentwatchers.Add(componentname,new RealCurrentExport(tran,componentname)); //lets us get current later
-				componentvalues.Add(componentname,0); //initializes the componentvalue
 
 			}
 		}
-		public void UpdateCircuit() //from the values stored in the dictionary
+		public void OnMNAExport(object sender, ExportDataEventArgs exargs)
 		{
-			foreach(KeyValuePair<string,double> values in componentvalues)
+
+			if(sampleriters >= 10)
 			{
-				string nodename = values.Key;
-				double nodevalue = values.Value;
-				string nodetype = GetNodeTypeFromName(nodename);
-				ckt.TryGetEntity(nodename, out var node);
-				switch(nodetype)
-				{
-					case "VoltageSource":
-					node.SetParameter("dc",nodevalue);
-					break;
-					case "Inductor":
-					node.SetParameter("ic",nodevalue);
-					break;
-					case "Capacitor":
-					node.SetParameter("ic",nodevalue);
-					break;
+			string capacitorname = GetNodeNameFromPins("Capacitor",GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)),"0");
+			string inductorname = GetNodeNameFromPins("Inductor",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(1,0,0)),GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)));
+			double capacitorreadout = new RealVoltageExport(tran,GetPositivePin(capacitorname)).Value;
+			double inductorreadout = new RealCurrentExport(tran,inductorname).Value;
+			ckt.TryGetEntity(capacitorname, out SpiceSharp.Entities.IEntity capacitor);
+			ckt.TryGetEntity(inductorname, out SpiceSharp.Entities.IEntity inductor);
+			capacitor.SetParameter("ic",capacitorreadout);
+			inductor.SetParameter("ic",inductorreadout);
 
-					default:
-					break;
-				}
-				
-			}
-		}
-		public void OnMNAExport(object sender, ExportDataEventArgs exargs){
-			//sapi.BroadcastMessageToAllGroups("in:"+input + " out:" + output + " current" + currentexport.Value + " iter:" + inter,EnumChatType.Notification);
-			//ckt.TryGetEntity(voltagenodename, out var voltagenode); voltagenode.SetParameter("dc",voltagesetting);
-			//tran.TimeParameters.StopTime -= 1;
-			inter++;
-			if(sampleriters >= 9)
-			{
-				inter = 0;
-				tran.TimeParameters.StopTime = 0;
-				foreach (KeyValuePair<string,double> values in componentlist) //we're working on componentvalues. Since they share keys, this works
-				{
-					string nodename = values.Key;
-					switch(GetNodeTypeFromName(nodename))
-					{
-						case "Inductor" : //get the current within an inductor
-						componentvalues[nodename] = currentwatchers[nodename].Value;
-						break;
-
-						case "Capacitor" : //get the voltage within a capacitor
-						componentvalues[nodename] = voltagewatchers[nodename].Value;
-						break;
-
-						case "VoltageSource" : //get the voltage DC on a VoltageSource
-						//componentvalues[nodename] = new RealPropertyExport(tran,nodename,"dc").Value;
-						break;
-
-						default:
-						break;
-					}
-				}
-				//inductorcurrent = currentexport.Value;
-				//capacitorvoltage = outputExport.Value;
+			
+			sapi.BroadcastMessageToAllGroups("capacitor: "+capacitorreadout+" inductor: "+inductorreadout,EnumChatType.CommandSuccess);
+			tran.TimeParameters.StopTime = 0; //stop the simulation
+			sampleriters = 0;
 			}
 		}
 		public override void StartServerSide(ICoreServerAPI sapi)
 		{
 			this.sapi = sapi;
-
-			tran.TimeParameters.UseIc = true; //ESSENTIAL!!
 			tran.ExportSimulationData += OnMNAExport;
 			
+			string voltagename = GetNodeNameFromPins("VoltageSource",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(0,0,0)),"0");
+			string resistorname = GetNodeNameFromPins("Resistor",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(0,0,0)),GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(1,0,0)));
+			string inductorname = GetNodeNameFromPins("Inductor",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(1,0,0)),GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)));
+			string capacitorname = GetNodeNameFromPins("Capacitor",GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)),"0");
 			//make some basic components, you know, for testing.
-			componentlist.Add(GetNodeNameFromPins("VoltageSource",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(0,0,0)),"0"),0);
-			componentlist.Add(GetNodeNameFromPins("Resistor",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(0,0,0)),GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(1,0,0))),1);
-			componentlist.Add(GetNodeNameFromPins("Inductor",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(1,0,0)),GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0))),1);
-			componentlist.Add(GetNodeNameFromPins("Capacitor",GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)),"0"),1);
-    
-			// Make the exports
-			/*var inductorprop = new RealPropertyExport(tran,inductornodename,"current");
-			inputExport = new RealVoltageExport(tran, GetPositivePin(voltagenodename));
-			outputExport = new RealVoltageExport(tran, GetPositivePin(capacitornodename));
-			currentexport = new RealCurrentExport(tran,inductornodename); */
+			componentlist.Add(voltagename, new VoltageSource(voltagename,GetPositivePin(voltagename),GetNegativePin(voltagename),1));
+			componentlist.Add(resistorname, new Resistor(resistorname,GetPositivePin(resistorname),GetNegativePin(resistorname),1));
+			componentlist.Add(inductorname, new Inductor(inductorname,GetPositivePin(inductorname),GetNegativePin(inductorname),1));
+			componentlist.Add(capacitorname, new Capacitor(capacitorname,GetPositivePin(capacitorname),GetNegativePin(capacitorname),1));
 
 			sapi.World.RegisterGameTickListener(TickMNA,1000); //tick the MNA every second
 
@@ -208,7 +156,8 @@ namespace ElectricalRevolution
             {
 			if(args.Length > 0){
 			Double.TryParse(args[0],out double dcsetting);
-			componentvalues[GetNodeNameFromPins("VoltageSource",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(0,0,0)),"0")] = dcsetting;
+			ckt.TryGetEntity(GetNodeNameFromPins("VoltageSource",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(0,0,0)),"0"), out SpiceSharp.Entities.IEntity component);
+			if(!component.TrySetParameter("dc",dcsetting)){throw new NullReferenceException("MNA command couldn't set the parameter: dc");}
 			}
 
 
@@ -237,13 +186,12 @@ namespace ElectricalRevolution
 		}
 		public void TickMNA(float par)
 		{
-			//sapi.BroadcastMessageToAllGroups("",EnumChatType.CommandSuccess);
-			
 			/*ckt.TryGetEntity(voltagenodename, out var voltagenode); voltagenode.SetParameter("dc",voltagesetting);
 			ckt.TryGetEntity(capacitornodename, out var capacitornode); capacitornode.SetParameter("ic",capacitorvoltage);
 			ckt.TryGetEntity(inductornodename, out var inductornode); inductornode.SetParameter("ic",inductorcurrent); */
 			CreateCircuit();
-			UpdateCircuit();
+			tran.TimeParameters.UseIc = true; //ESSENTIAL!!
+			tran.TimeParameters.StopTime = 1; // run for this amount of cycles
             tran.Run(ckt);
 
 			//if(cktdata != null){ckt = SerializerUtil.Deserialize<Circuit>(sapi.WorldManager.SaveGame.GetData("ckt"));}
