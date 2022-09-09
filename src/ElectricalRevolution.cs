@@ -158,6 +158,7 @@ namespace ElectricalRevolution
 			
 			//make some basic components, you know, for testing.
 			componentlist.Add(voltagename, new VoltageSource(voltagename,GetPositivePin(voltagename),GetNegativePin(voltagename),1));
+			componentlist.Add(resistorname, new Resistor(resistorname,GetPositivePin(resistorname),GetNegativePin(resistorname),1));
 			componentlist.Add(diodename, new Diode(diodename,GetPositivePin(diodename),GetNegativePin(diodename),diodemodelname));
 			componentlist.Add(inductorname, new Inductor(inductorname,GetPositivePin(inductorname),GetNegativePin(inductorname),1));
 			componentlist.Add(capacitorname, new Capacitor(capacitorname,GetPositivePin(capacitorname),GetNegativePin(capacitorname),1));
@@ -172,8 +173,8 @@ namespace ElectricalRevolution
 			if(!component.TrySetParameter("dc",dcsetting)){throw new NullReferenceException("MNA command couldn't set the parameter: dc");}
 			}
 
-			string capacitorname = GetNodeNameFromPins("Capacitor",GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)),"0");
-			string inductorname = GetNodeNameFromPins("Inductor",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(1,0,0)),GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)));
+			string capacitorname = GetNodeNameFromPins("Capacitor",GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(1,0,0)),"0");
+			string inductorname = GetNodeNameFromPins("Inductor",GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)),GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(1,0,0)));
 			//double inductorreadout = ICWatchers[inductorname].Value;
 			//double capacitorreadout = ICWatchers[capacitorname].Value;
 			ckt.TryGetEntity(capacitorname, out SpiceSharp.Entities.IEntity node);
@@ -210,9 +211,6 @@ namespace ElectricalRevolution
 		}
 		public void TickMNA(float par)
 		{
-			/*ckt.TryGetEntity(voltagenodename, out var voltagenode); voltagenode.SetParameter("dc",voltagesetting);
-			ckt.TryGetEntity(capacitornodename, out var capacitornode); capacitornode.SetParameter("ic",capacitorvoltage);
-			ckt.TryGetEntity(inductornodename, out var inductornode); inductornode.SetParameter("ic",inductorcurrent); */
 			CreateCircuit();
 			tran.TimeParameters.UseIc = true; //ESSENTIAL!!
 			tran.TimeParameters.StopTime = 1; // run for this amount of cycles
