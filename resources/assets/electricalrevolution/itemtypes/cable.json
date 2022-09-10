@@ -1,0 +1,48 @@
+{
+	code: "cable",
+	variantgroups: [
+		{ code: "quality", states: ["low quality", "standard", "enriched", "pure"] },
+		{ code: "material", states: ["copper", "gold", "silver", "iron"] },
+	],
+	attributes: {
+		displaycaseable: true, 
+		shelvable: true,
+	},
+	heldTpUseAnimation: "interactstatic", maxstacksize: 64,
+	shapeByType: {
+		"*-copper": { "base": "item/cable" },
+		"*-gold": { "base": "item/cable" },
+		"*-silver": { "base": "item/cable" },
+		"*-iron": { "base": "item/cable" },
+	},
+	texturesByType: {
+		"*": {
+			"material": { base: "game:block/metal/ingot/{material}" }
+		}
+	},
+	creativeinventory: { "general": ["*"], "items": ["*"] },
+	guiTransformByType: {
+		"*": {
+			translation: { x: 0, y: 0, z: 0 },
+			rotation: { x: -55, y: 27, z: 0 },
+			origin: { x: 0.54, y: 0.06, z: 0.48 },
+			scale: 4.2
+		}
+	},
+	fpHandTransform: {
+		translation: { x: 0.4, y: -0.1, z: 0 },
+		rotation: { x: 79, y: 86, z: -25 },
+		scale: 1.75
+	},
+	tpHandTransform: {
+		translation: { x: -0.67, y: -0.7, z: -0.15 },
+		rotation: { x: 90, y: 21, z: 0 },
+		scale: 0.77
+	},
+	groundTransform: {
+		translation: { x: 0, y: 0, z: 0 },
+		rotation: { x: 19, y: 0, z: 0 },
+		origin: { x: 0.5, y: 0, z: 0.5 },
+		scale: 4
+	}
+}
