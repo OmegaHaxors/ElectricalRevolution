@@ -91,7 +91,6 @@ namespace ElectricalRevolution
 				switch(componenttype)
 				{
 					case "VoltageSource":
-					//ckt.Add(new VoltageSource(componentname,GetPositivePin(componentname),GetNegativePin(componentname),cvalue));
 					ckt.Add(component as VoltageSource);
 					break;
 
@@ -141,6 +140,18 @@ namespace ElectricalRevolution
 				//sapi.BroadcastMessageToAllGroups(GetNodeTypeFromName(nodename) + ": " + ICWatchers[nodename].Value,EnumChatType.CommandSuccess);
 				//BlockPos blockpos = new BlockPos()
 				//todo: cast the information onto its block
+			}
+			castMNAtoblocks();
+		}
+		public void castMNAtoblocks()
+		{
+			foreach(KeyValuePair<string,SpiceSharp.Entities.IEntity> entry in componentlist)
+			{
+				SpiceSharp.Entities.IEntity component = entry.Value;
+				string componentname = component.Name;
+				string componentlocation = GetPositivePin(componentname);
+				BlockPos blockpos = PinToBlockPos(componentlocation,out Vec3i sublocation);
+
 			}
 		}
 		public override void StartServerSide(ICoreServerAPI sapi)
@@ -262,6 +273,48 @@ namespace ElectricalRevolution
 			string returnstring = nodename;
 			int startat = returnstring.IndexOf("~") + 1;
 			return returnstring.Substring(startat);
+		}
+		public BlockPos PinToBlockPos(string pinname,out Vec3i sublocation) //converts a pin into a blockpos
+		{
+			string workstring = pinname;
+			//the pin name will look like this:
+			//10, 3, 10 (0, 0, 0)
+			int startat = 0;
+			int stopat = workstring.IndexOf(",");
+			int length = stopat-startat;
+			int x = workstring.Substring(startat,length).ToInt(-666);
+			workstring = workstring.Substring(stopat+2); //2 gets rid of the comma and space
+			//3, 10 (0, 0, 0)
+			stopat = workstring.IndexOf(",");
+			length = stopat-startat;
+			int y = workstring.Substring(startat,length).ToInt(-666);
+			workstring = workstring.Substring(stopat+2); //2 gets rid of the comma and space
+			//should be 10 (0, 0, 0)
+			stopat = workstring.IndexOf("(")-1;
+			length = stopat-startat;
+			int z = workstring.Substring(startat,length).ToInt(-666);
+			workstring = workstring.Substring(stopat+2); //get rid of the space and )
+			//0, 0, 0)
+			stopat = workstring.IndexOf(",");
+			length = stopat-startat;
+			int sex = workstring.Substring(startat,length).ToInt(-666); //sub-x. What the E stands for is as much of a mystery as what the N in ELN stands for.
+			workstring = workstring.Substring(stopat+2);
+			//should be 0, 0)
+			stopat = workstring.IndexOf(",");
+			length = stopat-startat;
+			int sey = workstring.Substring(startat,length).ToInt(-666);
+			workstring = workstring.Substring(stopat+2);
+			//should be 0)
+			stopat = workstring.IndexOf(")");
+			length = stopat-startat;
+			int sez = workstring.Substring(startat,length).ToInt(-666);
+			workstring = workstring.Substring(stopat+1); //should be empty now
+
+			sublocation = new Vec3i(sex,sey,sez);
+			//sapi.BroadcastMessageToAllGroups("x:"+x+"y:"+y+"z:"+z+ ": "+workstring + " subblock:" + sublocation.ToString(),EnumChatType.CommandError);
+			//x:11y:3z:10:  subblock:X=1,Y=0,Z=0
+			
+			return new BlockPos(x,y,z);
 		}
 	}
 }
