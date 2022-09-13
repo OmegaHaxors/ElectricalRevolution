@@ -29,7 +29,7 @@ namespace ElectricalRevolution
 		public override void Initialize(ICoreAPI api)
 		{
 			base.Initialize(api);
-			//RegisterGameTickListener(AdjustLightLevel,1000);//only runs on the server (set to 100)
+			//RegisterGameTickListener(SetLightLevelFromVoltage,1000);//only runs on the server (set to 100)
 		}
 		public override void CreateBehaviors(Block block, IWorldAccessor worldForResolve)
 		{
@@ -52,12 +52,12 @@ namespace ElectricalRevolution
 		{
 			Api.World.BlockAccessor.MarkBlockModified(base.Pos);
 		}
-		public void SetLightLevelFromVoltage(float voltage = -1f) ///set the light level from the supplied voltage. If no arg, it will take from Tree
+		public void SetLightLevelFromVoltage(double voltage = -1f) ///set the light level from the supplied voltage. If no arg, it will take from Tree
 		{
 			//byte red = (byte)rred.Next(0,22);
 			//byte green = (byte)rblue.Next(0,22);
 			//byte blue = (byte)rgreen.Next(0,22);
-			if(voltage < 0)
+			if(voltage < 0 && this.GetBehavior<BEBehaviorElectricalConverter>() != null)
 			{
 			BlockEntity block = Api.World.BlockAccessor.GetBlockEntity(base.Pos);
 			voltage = this.GetBehavior<BEBehaviorElectricalConverter>().Voltage;

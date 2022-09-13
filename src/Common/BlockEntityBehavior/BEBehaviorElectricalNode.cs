@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Server;
@@ -20,14 +21,14 @@ namespace ElectricalRevolution
 {
 	public class BEBehaviorElectricalNode : BlockEntityBehavior
 	{
-    public float Power => Voltage * Current;//in Joules
-    public float Resistance; //in Ohms
-		public float ParasiticResistance; //Resistance converted into heat
-		public float Voltage; //in Volts
-		public float SeriesCapacitance; //in Farads
-		public float ParasiticCapacitance; //capacitance that goes to ground
-		public float Current; //in Amps
-		public float Inductance; //in Henries
+    public double Power => Voltage * Current;//in Joules
+    public double Resistance; //in Ohms
+		public double ParasiticResistance; //Resistance converted into heat
+		public double Voltage; //in Volts
+		public double SeriesCapacitance; //in Farads
+		public double ParasiticCapacitance; //capacitance that goes to ground
+		public double Current; //in Amps
+		public double Inductance; //in Henries
 		public BEBehaviorElectricalNode(BlockEntity blockentity) : base(blockentity){}
 
     public override void Initialize(ICoreAPI api, JsonObject properties)
@@ -54,9 +55,10 @@ namespace ElectricalRevolution
       };
 
 			bool isCreativePlayer = forPlayer.WorldData.CurrentGameMode == EnumGameMode.Creative;
-			foreach (var meter in meters)
+      Dictionary<string,bool> metersclone = meters.ToDictionary(entry => entry.Key,entry => entry.Value);
+			foreach (var meter in metersclone)
 			{
-				meters[meter.Key] = isCreativePlayer || HasAttribute(forPlayer, meter.Key);
+        meters[meter.Key] = isCreativePlayer || HasAttribute(forPlayer, meter.Key);
 			}
 
       if (meters["voltmeter"])
@@ -121,8 +123,8 @@ namespace ElectricalRevolution
 		}
 		public override void ToTreeAttributes(ITreeAttribute tree)
 		{
-			tree.SetFloat("voltage",Voltage);
-			tree.SetFloat("current",Current);
+			tree.SetDouble("voltage",Voltage);
+			tree.SetDouble("current",Current);
 			base.ToTreeAttributes(tree);
 		}
 	}

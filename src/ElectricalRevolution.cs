@@ -73,13 +73,7 @@ namespace ElectricalRevolution
 			(new Sampler("sampler",TimePoints, (sender, exargs) =>
                 {
 						sampleriters++;
-						//double dcsetting = ICwatchers[GetNodeNameFromPins("VoltageSource",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(0,0,0)),"0")].Value;
-						/*double dcsetting = 100; //for now, hard code it to 100
-						double inductorcurrent = ICwatchers[GetNodeNameFromPins("Inductor",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(1,0,0)),GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)))].Value;
-						double capacitorvoltage = ICwatchers[GetNodeNameFromPins("Capacitor",GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)),"0")].Value;
-						sapi.BroadcastMessageToAllGroups("DC setting:" + dcsetting,EnumChatType.Notification);
-						sapi.BroadcastMessageToAllGroups("inductor:" + inductorcurrent + " capacitor:" + capacitorvoltage,EnumChatType.Notification);*/
-						//discontinuing sampler readouts. Get your data from Export event.
+						//applying KISS principles here
 				})
 			);}
 			foreach(KeyValuePair<string,SpiceSharp.Entities.IEntity> entry in componentlist)
@@ -151,6 +145,20 @@ namespace ElectricalRevolution
 				string componentname = component.Name;
 				string componentlocation = GetPositivePin(componentname);
 				BlockPos blockpos = PinToBlockPos(componentlocation,out Vec3i sublocation);
+				//Block block = api.World.BlockAccessor.GetBlock(blockpos);
+				BlockEntity blockent = api.World.BlockAccessor.GetBlockEntity(blockpos);
+				if(blockent == null){break;} //it's probably unloaded. No need to update it.
+				BEBehaviorElectricalNode blockbehavior = blockent.GetBehavior<BEBehaviorElectricalNode>();
+				if(blockbehavior == null){break;} //if it's not a node, don't bother with it.
+				blockbehavior.Current = new RealCurrentExport(tran,componentname).Value;
+				blockbehavior.Voltage = new RealVoltageExport(tran,GetPositivePin(componentname)).Value;
+				
+				/*if(GetNodeTypeFromName(componentname) == "Inductor")
+				{blockbehavior.Current = ICWatchers[componentname].Value;}
+				else if(GetNodeTypeFromName(componentname) == "Capacitor")
+				{blockbehavior.Voltage = ICWatchers[componentname].Value;}*/
+				blockbehavior.Blockentity.MarkDirty(true);
+				//sapi.BroadcastMessageToAllGroups("success",EnumChatType.CommandError);
 
 			}
 		}

@@ -2,7 +2,7 @@
 	code: "lightblock",
 	class: "LightBlock",
 	entityclass: "LightBlockEntity",
-	entityBehaviors: [{name: "CreativeConverter"}],
+	entityBehaviors: [{name: "ElectricalNode"}],
 	creativeinventory: { "general": ["*"],"mechanics": ["*"] },
 	blockmaterial: "Wood",
 	shape: { base:"game:block/clay/bowl-ground-glowing"},
