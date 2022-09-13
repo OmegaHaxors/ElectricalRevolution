@@ -211,7 +211,7 @@ namespace ElectricalRevolution
 				Vec3i subblockpos = new Vec3i(0,0,0);
 
 				string message = GetPinNameAtPosition(blockpos,subblockpos);
-				string nodename = GetNodeNameFromPins("VoltageSource",GetPinNameAtPosition(blockpos,subblockpos),GetPinNameAtPosition(blockpos,subblockpos.AddCopy(1,0,0)));
+				string nodename = GetNodeNameFromPins("VoltageSource",GetPinNameAtPosition(blockpos,subblockpos),"0");
 				string nodetype = GetNodeTypeFromName(nodename);
 				string pospinname = GetPositivePin(nodename);
 				string negpinname = GetNegativePin(nodename);

@@ -118,8 +118,8 @@ namespace ElectricalRevolution
 
     public override void FromTreeAttributes(ITreeAttribute tree, IWorldAccessor world)
 		{
-			Voltage = tree.GetFloat("voltage");
-			Current = tree.GetFloat("current");
+			Voltage = tree.GetDouble("voltage");
+			Current = tree.GetDouble("current");
 			base.FromTreeAttributes(tree, world);
 		}
 		public override void ToTreeAttributes(ITreeAttribute tree)

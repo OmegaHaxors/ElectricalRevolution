@@ -1,0 +1,99 @@
+{
+	"textureWidth": 16,
+	"textureHeight": 16,
+	"textureSizes": {
+		"0": [16, 16],
+		"1": [16, 16]
+	},
+	"textures": {
+		"0": "game:block/metal/plate/iron",
+		"1": "game:block/creative/col79"
+	},
+	"elements": [
+		{
+			"name": "cube",
+			"from": [0, 0, 15],
+			"to": [16, 16, 16],
+			"rotationOrigin": [8, 8, 15.1875],
+			"faces": {
+				"north": {
+					"texture": "#0",
+					"uv": [0, 0, 16, 16],
+					"autoUv": false
+				},
+				"east": {
+					"texture": "#0",
+					"uv": [0, 0, 1, 16],
+					"autoUv": false
+				},
+				"south": {
+					"texture": "#0",
+					"uv": [0, 0, 16, 16],
+					"autoUv": false
+				},
+				"west": {
+					"texture": "#0",
+					"uv": [0, 0, 1, 16],
+					"autoUv": false
+				},
+				"up": {
+					"texture": "#0",
+					"uv": [0, 0, 16, 1],
+					"autoUv": false
+				},
+				"down": {
+					"texture": "#0",
+					"uv": [0, 0, 16, 1],
+					"autoUv": false
+				}
+			},
+			"parent": null,
+			"rotationX": 0,
+			"rotationY": 0,
+			"rotationZ": 0
+		},
+		{
+			"name": "cube",
+			"from": [0.5, 0.5, 14.75],
+			"to": [15.5, 15.5, 15],
+			"rotationOrigin": [8, 8, 15.1875],
+			"faces": {
+				"north": {
+					"texture": "#1",
+					"uv": [0, 0, 15, 15],
+					"autoUv": false
+				},
+				"east": {
+					"texture": "#1",
+					"uv": [0, 0, 0.25, 15],
+					"autoUv": false
+				},
+				"south": {
+					"texture": "#1",
+					"uv": [0, 0, 15, 15],
+					"autoUv": false
+				},
+				"west": {
+					"texture": "#1",
+					"uv": [0, 0, 0.25, 15],
+					"autoUv": false
+				},
+				"up": {
+					"texture": "#1",
+					"uv": [0, 0, 15, 0.25],
+					"autoUv": false
+				},
+				"down": {
+					"texture": "#1",
+					"uv": [0, 0, 15, 0.25],
+					"autoUv": false
+				}
+			},
+			"parent": null,
+			"rotationX": 0,
+			"rotationY": 0,
+			"rotationZ": 0
+		}
+	],
+	"animations": []
+}
