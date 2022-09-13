@@ -227,7 +227,7 @@ namespace ElectricalRevolution
             diodemodel.SetParameter("Is",2.52e-9); //SaturationCurrent
 			diodemodel.SetParameter("Rs",0.568); //Resistance
 			diodemodel.SetParameter("N",1.752); //emission coefficient
-			diodemodel.SetParameter("Cjo",4e-12); //junction capacitance
+			diodemodel.SetParameter("Cjo",4e-4); //junction capacitance
 			diodemodel.SetParameter("M",0.4); //grading coefficient
 			diodemodel.SetParameter("tt",20e-9); //transit time
             return diodemodel;
