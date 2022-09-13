@@ -99,7 +99,7 @@ namespace ElectricalRevolution
 
 					case "Capacitor":
 					ckt.Add(component as Capacitor);
-					ICWatchers.Add(componentname,new RealVoltageExport(tran,GetPositivePin(componentname))); //lets us get voltage later
+					ICWatchers.Add(componentname,new RealVoltageExport(tran,GetPositivePin(componentname),GetNegativePin(componentname))); //lets us get voltage later
 					break;
 
 					case "Diode":
@@ -151,7 +151,7 @@ namespace ElectricalRevolution
 				BEBehaviorElectricalNode blockbehavior = blockent.GetBehavior<BEBehaviorElectricalNode>();
 				if(blockbehavior == null){break;} //if it's not a node, don't bother with it.
 				blockbehavior.Current = new RealCurrentExport(tran,componentname).Value;
-				blockbehavior.Voltage = new RealVoltageExport(tran,GetPositivePin(componentname)).Value;
+				blockbehavior.Voltage = new RealVoltageExport(tran,GetPositivePin(componentname),GetNegativePin(componentname)).Value;
 				
 				/*if(GetNodeTypeFromName(componentname) == "Inductor")
 				{blockbehavior.Current = ICWatchers[componentname].Value;}
