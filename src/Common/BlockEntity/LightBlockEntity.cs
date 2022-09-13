@@ -29,12 +29,12 @@ namespace ElectricalRevolution
 		public override void Initialize(ICoreAPI api)
 		{
 			base.Initialize(api);
-			//RegisterGameTickListener(SetLightLevelFromVoltage,1000);//only runs on the server (set to 100)
+			//RegisterGameTickListener(UpdateNBT,1000);//only runs on the server (set to 100)
 		}
 		public override void CreateBehaviors(Block block, IWorldAccessor worldForResolve)
 		{
 			base.CreateBehaviors(block, worldForResolve);
-			this.nodebehavior = base.GetBehavior<BEBehaviorElectricalConverter>();
+			this.nodebehavior = base.GetBehavior<BEBehaviorElectricalNode>();
 		}
 		public byte[] GetLightHsv(){return lightHsv;}
 		public void SetLightLevel(byte lightvalue){byte oldvalue = lightHsv[2]; lightHsv[2] = lightvalue;SendLightUpdate();}

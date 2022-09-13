@@ -16,6 +16,7 @@ using System.Text;
 using SpiceSharp;
 using SpiceSharp.Components;
 using SpiceSharp.Simulations;
+using ElectricalRevolution;
 
 namespace ElectricalRevolution
 {

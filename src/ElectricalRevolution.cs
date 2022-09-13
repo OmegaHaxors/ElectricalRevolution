@@ -131,11 +131,8 @@ namespace ElectricalRevolution
 				double readout = entry.Value.Value; //awkwaaard
 				ckt.TryGetEntity(nodename, out SpiceSharp.Entities.IEntity node);
 				node.SetParameter("ic",ICWatchers[nodename].Value);
-				//sapi.BroadcastMessageToAllGroups(GetNodeTypeFromName(nodename) + ": " + ICWatchers[nodename].Value,EnumChatType.CommandSuccess);
-				//BlockPos blockpos = new BlockPos()
-				//todo: cast the information onto its block
 			}
-			castMNAtoblocks();
+			castMNAtoblocks(); //sends data from the MNA into the blockents
 		}
 		public void castMNAtoblocks()
 		{
@@ -153,12 +150,9 @@ namespace ElectricalRevolution
 				blockbehavior.Current = new RealCurrentExport(tran,componentname).Value;
 				blockbehavior.Voltage = new RealVoltageExport(tran,GetPositivePin(componentname),GetNegativePin(componentname)).Value;
 				
-				/*if(GetNodeTypeFromName(componentname) == "Inductor")
-				{blockbehavior.Current = ICWatchers[componentname].Value;}
-				else if(GetNodeTypeFromName(componentname) == "Capacitor")
-				{blockbehavior.Voltage = ICWatchers[componentname].Value;}*/
+				//sapi.BroadcastMessageToAllGroups(blockbehavior.Voltage + "+"+ blockbehavior.Current,EnumChatType.CommandError);
 				blockbehavior.Blockentity.MarkDirty(true);
-				//sapi.BroadcastMessageToAllGroups("success",EnumChatType.CommandError);
+				//sapi.BroadcastMessageToAllGroups(blockbehavior.Voltage + "+"+ blockbehavior.Current,EnumChatType.CommandError);
 
 			}
 		}
@@ -168,14 +162,14 @@ namespace ElectricalRevolution
 			tran.ExportSimulationData += OnMNAExport;
 			
 			string voltagename = GetNodeNameFromPins("VoltageSource",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(0,0,0)),"0");
-			string resistorname = GetNodeNameFromPins("Resistor",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(0,0,0)),GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(1,0,0)));
-			string diodename = GetNodeNameFromPins("Diode",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(1,0,0)),GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)));
+			string resistorname = GetNodeNameFromPins("Resistor",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(0,0,0)),GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)));
+			string diodename = GetNodeNameFromPins("Diode",GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)),GetPinNameAtPosition(new BlockPos(12,3,10),new Vec3i(0,0,0)));
 			DiodeModel diodemodel = CreateDiodeModel(diodename);
 			string diodemodelname = diodemodel.Name;
-			string inductorname = GetNodeNameFromPins("Inductor",GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)),GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(1,0,0)));
-			string capacitorname = GetNodeNameFromPins("Capacitor",GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(1,0,0)),"0");
+			string inductorname = GetNodeNameFromPins("Inductor",GetPinNameAtPosition(new BlockPos(12,3,10),new Vec3i(0,0,0)),GetPinNameAtPosition(new BlockPos(13,3,10),new Vec3i(0,0,0)));
+			string capacitorname = GetNodeNameFromPins("Capacitor",GetPinNameAtPosition(new BlockPos(13,3,10),new Vec3i(0,0,0)),"0");
 			
-			//make some basic components, you know, for testing.
+			//make some basic components with hard-coded locations, you know, for testing.
 			componentlist.Add(voltagename, new VoltageSource(voltagename,GetPositivePin(voltagename),GetNegativePin(voltagename),1));
 			componentlist.Add(resistorname, new Resistor(resistorname,GetPositivePin(resistorname),GetNegativePin(resistorname),1));
 			componentlist.Add(diodename, new Diode(diodename,GetPositivePin(diodename),GetNegativePin(diodename),diodemodelname));
@@ -192,8 +186,8 @@ namespace ElectricalRevolution
 			if(!component.TrySetParameter("dc",dcsetting)){throw new NullReferenceException("MNA command couldn't set the parameter: dc");}
 			}
 
-			string capacitorname = GetNodeNameFromPins("Capacitor",GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(1,0,0)),"0");
-			string inductorname = GetNodeNameFromPins("Inductor",GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)),GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(1,0,0)));
+			string capacitorname = GetNodeNameFromPins("Capacitor",GetPinNameAtPosition(new BlockPos(13,3,10),new Vec3i(0,0,0)),"0");
+			string inductorname = GetNodeNameFromPins("Inductor",GetPinNameAtPosition(new BlockPos(12,3,10),new Vec3i(0,0,0)),GetPinNameAtPosition(new BlockPos(13,3,10),new Vec3i(0,0,0)));
 			//double inductorreadout = ICWatchers[inductorname].Value;
 			//double capacitorreadout = ICWatchers[capacitorname].Value;
 			ckt.TryGetEntity(capacitorname, out SpiceSharp.Entities.IEntity node);
