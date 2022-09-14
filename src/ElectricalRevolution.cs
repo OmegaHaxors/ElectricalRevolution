@@ -300,45 +300,65 @@ namespace ElectricalRevolution
 
 			string pos = GetPositivePin(nodename);
 			string neg = GetNegativePin(nodename);
-			//prevents the creation of "0IN" or "0OUT"
-			string subpos = Addifnot(pos,"IN","0");
-			string subneg = Addifnot(pos,"OUT","0");
-			Circuit subcircuit = new Circuit(
+			/*Circuit subcircuit = new Circuit(
 			//new Resistor (nodename+"PRP",pos,subpos,0.01),
 			//new Capacitor(nodename+"PCP",subpos,"0",0.01),
 			//new Inductor (nodename+"PI",subneg,neg,0.01),
 			//new Capacitor(nodename+"PCN",neg,"0",0.01)
-			);
+			);*/
 			string componenttype = GetNodeTypeFromName(nodename);
 			switch(componenttype)
 				{
 					case "VoltageSource":
-					subcircuit.Add(component as VoltageSource);
+					ckt.Add(component as VoltageSource);
 					break;
 
 					case "Resistor":
-					subcircuit.Add(component as Resistor);
+					ckt.Add(component as Resistor);
 					break;
 
 					case "Inductor":
-					subcircuit.Add(component as Inductor);
+					ckt.Add(component as Inductor);
 					ICWatchers.Add(nodename,new RealCurrentExport(tran,nodename)); //lets us get current later
 					break;
 
 					case "Capacitor":
-					subcircuit.Add(component as Capacitor);
+					ckt.Add(component as Capacitor);
 					ICWatchers.Add(nodename,new RealVoltageExport(tran,GetPositivePin(nodename),GetNegativePin(nodename))); //lets us get voltage later
 					break;
 
 					case "Diode":
-					subcircuit.Add(component as Diode);
-					subcircuit.Add(CreateDiodeModel(component.Name));
+					ckt.Add(component as Diode);
+					ckt.Add(CreateDiodeModel(component.Name));
 					break;
 
 					default:
 					break;
 				}
-			ckt.Merge(subcircuit);
+				//now we check the pos and neg pins to make sure they have unideal components
+				//they need to be there to ensure all components are self-sufficient and won't crash
+			
+			
+			
+			if(!pos.EqualsFast("0"))//prevents the creation of unideal components on earth ground, as they're not needed there
+			{
+			string subpos = pos + "UNIDEAL";
+			if(!ckt.TryGetEntity(GetNodeNameFromPins("Resistor",pos,subpos),out var throwaway)) //no need to add the component if it already exists
+			{
+				ckt.Add(new Resistor(GetNodeNameFromPins("Resistor",pos,subpos),pos,subpos,0.01)); //add a resistor with 0.01ohm
+				ckt.Add(new Capacitor(GetNodeNameFromPins("Capacitor",subpos,"0"),subpos,"0",0.01)); //add a capacitor-To-Ground with 0.01 farads
+			} 
+			}
+			if(!neg.EqualsFast("0")){
+			string subneg = neg + "UNIDEAL";
+			if(!ckt.TryGetEntity(GetNodeNameFromPins("Resistor",neg,subneg),out var throwaway)) //no need to add the component if it already exists
+			{
+				ckt.Add(new Resistor(GetNodeNameFromPins("Resistor",neg,subneg),neg,subneg,0.01)); //add a resistor with 0.01ohm
+				ckt.Add(new Capacitor(GetNodeNameFromPins("Capacitor",subneg,"0"),subneg,"0",0.01)); //add a capacitor-To-Ground with 0.01 farads
+			}
+			}
+
+
 		}
 		public string Addifnot(string inputstring, string addthis, string ifnotthis)
 		{
