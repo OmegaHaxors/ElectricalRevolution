@@ -66,6 +66,7 @@ namespace ElectricalRevolution
 		public Dictionary<string,Export<IBiasingSimulation, double>> ICWatchers = new Dictionary<string,Export<IBiasingSimulation, double>>();
 		public int sampleriters = 0;
 		
+		
 		public void CreateCircuit()
 		{
 			if(ckt == null){
@@ -82,34 +83,8 @@ namespace ElectricalRevolution
 				SpiceSharp.Entities.IEntity component = entry.Value;
 				string componenttype = GetNodeTypeFromName(componentname);
 				if(ckt.TryGetEntity(componentname, out var throwaway)){break;}//only add to the ckt if it wasn't there before
-				switch(componenttype)
-				{
-					case "VoltageSource":
-					ckt.Add(component as VoltageSource);
-					break;
-
-					case "Resistor":
-					ckt.Add(component as Resistor);
-					break;
-
-					case "Inductor":
-					ckt.Add(component as Inductor);
-					ICWatchers.Add(componentname,new RealCurrentExport(tran,componentname)); //lets us get current later
-					break;
-
-					case "Capacitor":
-					ckt.Add(component as Capacitor);
-					ICWatchers.Add(componentname,new RealVoltageExport(tran,GetPositivePin(componentname),GetNegativePin(componentname))); //lets us get voltage later
-					break;
-
-					case "Diode":
-					ckt.Add(component as Diode);
-					ckt.Add(CreateDiodeModel(component.Name));
-					break;
-
-					default:
-					break;
-				}
+				AddComponent(componentname, component);
+				/**/
 
 			}
 		}
@@ -317,6 +292,62 @@ namespace ElectricalRevolution
 			//x:11y:3z:10:  subblock:X=1,Y=0,Z=0
 			
 			return new BlockPos(x,y,z);
+		}
+		public void AddComponent(string nodename,SpiceSharp.Entities.IEntity component)
+		{
+
+			//in (paracap) -> pararesistor -> component+ -> component- -> parainduct -> out
+
+			string pos = GetPositivePin(nodename);
+			string neg = GetNegativePin(nodename);
+			//prevents the creation of "0IN" or "0OUT"
+			string subpos = Addifnot(pos,"IN","0");
+			string subneg = Addifnot(pos,"OUT","0");
+			Circuit subcircuit = new Circuit(
+			//new Resistor (nodename+"PRP",pos,subpos,0.01),
+			//new Capacitor(nodename+"PCP",subpos,"0",0.01),
+			//new Inductor (nodename+"PI",subneg,neg,0.01),
+			//new Capacitor(nodename+"PCN",neg,"0",0.01)
+			);
+			string componenttype = GetNodeTypeFromName(nodename);
+			switch(componenttype)
+				{
+					case "VoltageSource":
+					subcircuit.Add(component as VoltageSource);
+					break;
+
+					case "Resistor":
+					subcircuit.Add(component as Resistor);
+					break;
+
+					case "Inductor":
+					subcircuit.Add(component as Inductor);
+					ICWatchers.Add(nodename,new RealCurrentExport(tran,nodename)); //lets us get current later
+					break;
+
+					case "Capacitor":
+					subcircuit.Add(component as Capacitor);
+					ICWatchers.Add(nodename,new RealVoltageExport(tran,GetPositivePin(nodename),GetNegativePin(nodename))); //lets us get voltage later
+					break;
+
+					case "Diode":
+					subcircuit.Add(component as Diode);
+					subcircuit.Add(CreateDiodeModel(component.Name));
+					break;
+
+					default:
+					break;
+				}
+			ckt.Merge(subcircuit);
+		}
+		public string Addifnot(string inputstring, string addthis, string ifnotthis)
+		{
+			string outputstring = inputstring;
+			if(!inputstring.EqualsFast(ifnotthis))
+			{
+				inputstring = inputstring + addthis;
+			}
+			return outputstring;
 		}
 	}
 }
