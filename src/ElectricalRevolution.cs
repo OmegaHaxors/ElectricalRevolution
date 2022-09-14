@@ -180,6 +180,11 @@ namespace ElectricalRevolution
 			//everything.
 
 			}, Privilege.chat);
+			sapi.RegisterCommand("yeet","Try to delete a component and see what happens","",(IServerPlayer splayer, int groupId, CmdArgs args) =>
+            {
+				ckt.Remove(resistorname);
+			}, Privilege.chat);
+
 			sapi.RegisterCommand("here","Where am I? answered in text form","",(IServerPlayer splayer, int groupId, CmdArgs args) =>
             {
 				BlockPos blockpos = splayer.Entity.Pos.AsBlockPos;
