@@ -128,36 +128,55 @@ namespace ElectricalRevolution
       };
       foreach(BlockPos neighbourpos in neighbourposes)
       {
-        Api.Logger.Debug("neighbourpos: " + neighbourpos);
-        BlockEntity updog = this.Blockentity.Api.World.BlockAccessor.GetBlockEntity(neighbourpos); //always returns null
-        if(updog == null){continue;} //move on to the next iteration
-        Api.World.PlaySoundAt(new AssetLocation("game:sounds/effect/anvilhit"),neighbourpos.X,neighbourpos.Y,neighbourpos.Z);
-        Api.Logger.Debug("neighbourBE: " + neighbourpos);
-        BEBehaviorElectricalNode neighbournode = updog.GetBehavior<BEBehaviorElectricalNode>();
-        if(neighbournode == null){continue;}
-        //if(neighbournode.LeaderLocation == neighbournode.Blockentity.Pos) //true means they're the leader.
-        if(neighbournode.ConnectedNodes > 0) //followers don't have connected nodes
+        if(this.LeaderLocation == this.Blockentity.Pos)//You're a Leader. Pawn off responsiblity to anyone who will take it.
+        { //You're a Leader
+          BlockEntity updog = this.Blockentity.Api.World.BlockAccessor.GetBlockEntity(neighbourpos);
+          if(updog == null){continue;} //move on to the next iteration if nothing's there
+          Api.World.PlaySoundAt(new AssetLocation("game:sounds/effect/anvilhit"),neighbourpos.X,neighbourpos.Y,neighbourpos.Z);
+          BEBehaviorElectricalNode neighbournode = updog.GetBehavior<BEBehaviorElectricalNode>();
+          if(neighbournode == null){continue;}
+          if(neighbournode.ConnectedNodes > 0) //Tests if the neighbour is also a Leader
+          { //they're a leader
+            if(ShouldIBeTheLeader(blockpos,neighbourpos))
+            {
+              this.ConnectedNodes =+ neighbournode.ConnectedNodes; neighbournode.ConnectedNodes = 0; //absorb the node's soul
+              neighbournode.LeaderLocation = this.Blockentity.Pos; //tell them to follow you as leader
+              this.Blockentity.MarkDirty(true);
+              neighbournode.Blockentity.MarkDirty(true);
+            }else
+            {//The other block should be the leader
+              
+            }
+          }else //they have a leader. Give up your posessions and follow them.
+          {//check to see if their leader is even loaded in the first place, if not, become the leader
+            BlockEntity leaderBE = Api.World.BlockAccessor.GetBlockEntity(neighbournode.LeaderLocation);
+            if(leaderBE == null){continue;} //check if it's null first
+            BEBehaviorElectricalNode leadernode = Api.World.BlockAccessor.GetBlockEntity(neighbournode.LeaderLocation).GetBehavior<BEBehaviorElectricalNode>();
+            if(leadernode == null){continue;} //make sure someone didn't do the ol switcheroo
+            this.LeaderLocation = neighbournode.LeaderLocation; //You're now following the new leader
+            leadernode.ConnectedNodes += this.ConnectedNodes; //give up your soul to the leader
+            this.Blockentity.MarkDirty(true);
+            leadernode.Blockentity.MarkDirty(true);
+          }
+        }else //You're a Recruiter. Recruit some nodes for your Leader.
         {
-          this.ConnectedNodes =+ neighbournode.ConnectedNodes; neighbournode.ConnectedNodes = 0; //absorb the node's soul
-          neighbournode.LeaderLocation = this.Blockentity.Pos; //tell them to follow you as leader
-          this.Blockentity.MarkDirty(true);
-          neighbournode.Blockentity.MarkDirty(true);
-        }else //they have a leader. Give up your posessions and follow them.
-        {
-          BlockEntity leaderBE = Api.World.BlockAccessor.GetBlockEntity(neighbournode.LeaderLocation);
-          if(leaderBE == null){continue;} //check if it's null first
-          BEBehaviorElectricalNode leadernode = Api.World.BlockAccessor.GetBlockEntity(neighbournode.LeaderLocation).GetBehavior<BEBehaviorElectricalNode>();
-          if(leadernode == null){continue;} //make sure someone didn't do the ol switcheroo
-          this.LeaderLocation = neighbournode.LeaderLocation; //You're now following the new leader
-          leadernode.ConnectedNodes += this.ConnectedNodes; //give up your soul to the leader
-          this.Blockentity.MarkDirty(true);
-          leadernode.Blockentity.MarkDirty(true);
+          
         }
       }
+    }
 
-      //if the face is not a nodeblock, ignore them.
-      //if they're a leader, take their leadership and absorb their circuit
-      //if they're not a leader, yeild and follow their leader
+    public bool ShouldIBeTheLeader(BlockPos poslocal, BlockPos posremote)
+    { //tiebreaker function for when two leaders meet. Closest to 0,0,0 wins.
+      if(poslocal.X < posremote.X){return true;}
+      if(poslocal.X > posremote.X){return false;}
+      //in most cases, it will resolve here, but in the case of a tie...
+      if(poslocal.Y < posremote.Y){return true;}
+      if(poslocal.Y > posremote.Y){return false;}
+      //gee golly, still not resolved? 
+      if(poslocal.Z < posremote.Z){return true;}
+      if(poslocal.Z > posremote.Z){return false;}
+      throw new ArgumentException//something clearly went wrong. Throw an exception.
+      ("ShouldIBeTheLeader was unable to resolve. It's likely because the local and remote position were the same.");
     }
 
     public bool HasAttribute(IPlayer player, string treeAttribute)
