@@ -129,12 +129,12 @@ namespace ElectricalRevolution
       foreach(BlockPos neighbourpos in neighbourposes)
       {
         Api.Logger.Debug("neighbourpos: " + neighbourpos);
-        BlockEntity updog = Api.World.BlockAccessor.GetBlockEntity(neighbourpos); //for some reason, this always returns null?
-        if(updog == null){break;}
+        BlockEntity updog = this.Blockentity.Api.World.BlockAccessor.GetBlockEntity(neighbourpos); //always returns null
+        if(updog == null){continue;} //move on to the next iteration
         Api.World.PlaySoundAt(new AssetLocation("game:sounds/effect/anvilhit"),neighbourpos.X,neighbourpos.Y,neighbourpos.Z);
         Api.Logger.Debug("neighbourBE: " + neighbourpos);
         BEBehaviorElectricalNode neighbournode = updog.GetBehavior<BEBehaviorElectricalNode>();
-        if(neighbournode == null){break;}
+        if(neighbournode == null){continue;}
         //if(neighbournode.LeaderLocation == neighbournode.Blockentity.Pos) //true means they're the leader.
         if(neighbournode.ConnectedNodes > 0) //followers don't have connected nodes
         {
@@ -145,9 +145,9 @@ namespace ElectricalRevolution
         }else //they have a leader. Give up your posessions and follow them.
         {
           BlockEntity leaderBE = Api.World.BlockAccessor.GetBlockEntity(neighbournode.LeaderLocation);
-          if(leaderBE == null){break;} //check if it's null first
+          if(leaderBE == null){continue;} //check if it's null first
           BEBehaviorElectricalNode leadernode = Api.World.BlockAccessor.GetBlockEntity(neighbournode.LeaderLocation).GetBehavior<BEBehaviorElectricalNode>();
-          if(leadernode == null){break;} //make sure someone didn't do the ol switcheroo
+          if(leadernode == null){continue;} //make sure someone didn't do the ol switcheroo
           this.LeaderLocation = neighbournode.LeaderLocation; //You're now following the new leader
           leadernode.ConnectedNodes += this.ConnectedNodes; //give up your soul to the leader
           this.Blockentity.MarkDirty(true);

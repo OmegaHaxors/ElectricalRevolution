@@ -82,7 +82,7 @@ namespace ElectricalRevolution
 				string componentname = entry.Key;
 				SpiceSharp.Entities.IEntity component = entry.Value;
 				string componenttype = GetNodeTypeFromName(componentname);
-				if(ckt.TryGetEntity(componentname, out var throwaway)){break;}//only add to the ckt if it wasn't there before
+				if(ckt.TryGetEntity(componentname, out var throwaway)){continue;}//only add to the ckt if it wasn't there before
 				AddComponent(componentname, component);
 				/**/
 
@@ -119,9 +119,9 @@ namespace ElectricalRevolution
 				BlockPos blockpos = PinToBlockPos(componentlocation,out Vec3i sublocation);
 				//Block block = api.World.BlockAccessor.GetBlock(blockpos);
 				BlockEntity blockent = api.World.BlockAccessor.GetBlockEntity(blockpos);
-				if(blockent == null){break;} //it's probably unloaded. No need to update it.
+				if(blockent == null){continue;} //it's probably unloaded. No need to update it.
 				BEBehaviorElectricalNode blockbehavior = blockent.GetBehavior<BEBehaviorElectricalNode>();
-				if(blockbehavior == null){break;} //if it's not a node, don't bother with it.
+				if(blockbehavior == null){continue;} //if it's not a node, don't bother with it.
 				blockbehavior.Current = new RealCurrentExport(tran,componentname).Value;
 				blockbehavior.Voltage = new RealVoltageExport(tran,GetPositivePin(componentname),GetNegativePin(componentname)).Value;
 				
