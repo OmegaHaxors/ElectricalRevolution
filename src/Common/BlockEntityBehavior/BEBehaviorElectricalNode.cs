@@ -129,9 +129,9 @@ namespace ElectricalRevolution
       };
       foreach(BlockEntity updog in neighbours)
       {
-        if(updog != null){break;}
+        if(updog == null){break;}
         BEBehaviorElectricalNode neighbournode = updog.GetBehavior<BEBehaviorElectricalNode>();
-        if(neighbournode != null){break;}
+        if(neighbournode == null){break;}
         if(neighbournode.LeaderLocation == neighbournode.Blockentity.Pos) //true means they're the leader.
         {
           this.ConnectedNodes =+ neighbournode.ConnectedNodes; //absorb the node's soul
