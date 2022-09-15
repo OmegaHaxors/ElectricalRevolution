@@ -132,9 +132,10 @@ namespace ElectricalRevolution
         if(updog == null){break;}
         BEBehaviorElectricalNode neighbournode = updog.GetBehavior<BEBehaviorElectricalNode>();
         if(neighbournode == null){break;}
-        if(neighbournode.LeaderLocation == neighbournode.Blockentity.Pos) //true means they're the leader.
+        //if(neighbournode.LeaderLocation == neighbournode.Blockentity.Pos) //true means they're the leader.
+        if(neighbournode.ConnectedNodes != 0) //followers don't have connected nodes
         {
-          this.ConnectedNodes =+ neighbournode.ConnectedNodes; //absorb the node's soul
+          this.ConnectedNodes =+ neighbournode.ConnectedNodes; neighbournode.ConnectedNodes = 0; //absorb the node's soul
           neighbournode.LeaderLocation = this.Blockentity.Pos; //tell them to follow you as leader
           this.Blockentity.MarkDirty(true);
           neighbournode.Blockentity.MarkDirty(true);
@@ -168,12 +169,16 @@ namespace ElectricalRevolution
 		{
 			Voltage = tree.GetDouble("voltage");
 			Current = tree.GetDouble("current");
+      LeaderLocation = tree.GetBlockPos("LeaderLocation");
+      ConnectedNodes = tree.GetInt("ConnectedNodes");
 			base.FromTreeAttributes(tree, world);
 		}
 		public override void ToTreeAttributes(ITreeAttribute tree)
 		{
 			tree.SetDouble("voltage",Voltage);
 			tree.SetDouble("current",Current);
+      tree.SetBlockPos("LeaderLocation",LeaderLocation);
+      tree.SetInt("LeaderLocation",ConnectedNodes);
 			base.ToTreeAttributes(tree);
 		}
 	}
