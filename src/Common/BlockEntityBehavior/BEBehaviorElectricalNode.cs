@@ -129,7 +129,8 @@ namespace ElectricalRevolution
       };
       foreach(BlockEntity updog in neighbours)
       {
-        if(updog == null){break;}
+        if(updog == null){break;} //for some reason, this always returns null?
+        Api.Logger.Debug("neighbourpos: " + updog.Pos);
         BEBehaviorElectricalNode neighbournode = updog.GetBehavior<BEBehaviorElectricalNode>();
         if(neighbournode == null){break;}
         //if(neighbournode.LeaderLocation == neighbournode.Blockentity.Pos) //true means they're the leader.
