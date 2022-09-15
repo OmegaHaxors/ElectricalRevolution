@@ -30,14 +30,17 @@ namespace ElectricalRevolution
 		public double ParasiticCapacitance; //capacitance that goes to ground
 		public double Current; //in Amps
 		public double Inductance; //in Henries
+    public int ConnectedNodes; //a count of 'connected' nodes
+    public BlockPos LeaderLocation;
 		public BEBehaviorElectricalNode(BlockEntity blockentity) : base(blockentity){}
 
     public override void Initialize(ICoreAPI api, JsonObject properties)
 		{
 			Resistance = 0; ParasiticResistance = 0; ParasiticCapacitance = 0;
 			Voltage = 0;  SeriesCapacitance = float.PositiveInfinity;
-			Current = 0; Inductance = 0;
+			Current = 0; Inductance = 0; ConnectedNodes = 1; LeaderLocation = this.Blockentity.Pos;
 			base.Initialize(api, properties);
+      TryToFindNodes();
 		}
 
 		public override void GetBlockInfo(IPlayer forPlayer, StringBuilder sb)
@@ -102,11 +105,55 @@ namespace ElectricalRevolution
       {
         sb.AppendFormat(Lang.Get("Hold a meter tool in either hand to get a readout."), Array.Empty<object>()).AppendLine();
       }
+      AppendMeasurementText(sb, "Nodes connected: {0}",ConnectedNodes);
+      AppendMeasurementText(sb, "Node Leader at: {0}",LeaderLocation);
     }
 
     private void AppendMeasurementText(StringBuilder sb, string key, object unit)
     {
       sb.AppendFormat(Lang.Get(key, new object[] { unit }), Array.Empty<object>()).AppendLine();
+    }
+
+    public void TryToFindNodes() //runs soon after the block is initalized
+    {
+      //check each face for neighbours (Up,Down,North,East,South,West)
+      IBlockAccessor blocks = Api.World.BlockAccessor;
+      BlockPos blockpos = this.Blockentity.Pos;
+      BlockEntity[] neighbours = new BlockEntity[6]{
+        blocks.GetBlockEntity(blockpos.UpCopy()),
+        blocks.GetBlockEntity(blockpos.DownCopy()),
+        blocks.GetBlockEntity(blockpos.NorthCopy()),
+        blocks.GetBlockEntity(blockpos.EastCopy()),
+        blocks.GetBlockEntity(blockpos.SouthCopy()),
+        blocks.GetBlockEntity(blockpos.WestCopy())
+      };
+      foreach(BlockEntity updog in neighbours)
+      {
+        if(updog != null){break;}
+        BEBehaviorElectricalNode neighbournode = updog.GetBehavior<BEBehaviorElectricalNode>();
+        if(neighbournode != null){break;}
+        if(neighbournode.LeaderLocation == neighbournode.Blockentity.Pos) //true means they're the leader.
+        {
+          this.ConnectedNodes =+ neighbournode.ConnectedNodes; //absorb the node's soul
+          neighbournode.LeaderLocation = this.Blockentity.Pos; //tell them to follow you as leader
+          this.Blockentity.MarkDirty(true);
+          neighbournode.Blockentity.MarkDirty(true);
+        }else //they have a leader. Give up your posessions and follow them.
+        {
+          BlockEntity leaderBE = blocks.GetBlockEntity(neighbournode.LeaderLocation);
+          if(leaderBE == null){break;} //check if it's null first
+          BEBehaviorElectricalNode leadernode = blocks.GetBlockEntity(neighbournode.LeaderLocation).GetBehavior<BEBehaviorElectricalNode>();
+          if(leadernode == null){break;} //make sure someone didn't do the ol switcheroo
+          this.LeaderLocation = neighbournode.LeaderLocation; //You're now following the new leader
+          leadernode.ConnectedNodes += this.ConnectedNodes; //give up your soul to the leader
+          this.Blockentity.MarkDirty(true);
+          leadernode.Blockentity.MarkDirty(true);
+        }
+      }
+
+      //if the face is not a nodeblock, ignore them.
+      //if they're a leader, take their leadership and absorb their circuit
+      //if they're not a leader, yeild and follow their leader
     }
 
     public bool HasAttribute(IPlayer player, string treeAttribute)
@@ -115,6 +162,7 @@ namespace ElectricalRevolution
       var leftHandItem = player.Entity.LeftHandItemSlot.Itemstack.Attributes;
       return rightHandItem.HasAttribute(treeAttribute) || leftHandItem.HasAttribute(treeAttribute);
     }
+
 
     public override void FromTreeAttributes(ITreeAttribute tree, IWorldAccessor world)
 		{
