@@ -120,12 +120,12 @@ namespace ElectricalRevolution
       IBlockAccessor blocks = Api.World.BlockAccessor;
       BlockPos blockpos = this.Blockentity.Pos;
       BlockEntity[] neighbours = new BlockEntity[6]{
-        blocks.GetBlockEntity(blockpos.UpCopy()),
-        blocks.GetBlockEntity(blockpos.DownCopy()),
-        blocks.GetBlockEntity(blockpos.NorthCopy()),
-        blocks.GetBlockEntity(blockpos.EastCopy()),
-        blocks.GetBlockEntity(blockpos.SouthCopy()),
-        blocks.GetBlockEntity(blockpos.WestCopy())
+        blocks.GetBlockEntity(blockpos.UpCopy(1)),
+        blocks.GetBlockEntity(blockpos.DownCopy(1)),
+        blocks.GetBlockEntity(blockpos.NorthCopy(1)),
+        blocks.GetBlockEntity(blockpos.EastCopy(1)),
+        blocks.GetBlockEntity(blockpos.SouthCopy(1)),
+        blocks.GetBlockEntity(blockpos.WestCopy(1))
       };
       foreach(BlockEntity updog in neighbours)
       {
@@ -133,7 +133,7 @@ namespace ElectricalRevolution
         BEBehaviorElectricalNode neighbournode = updog.GetBehavior<BEBehaviorElectricalNode>();
         if(neighbournode == null){break;}
         //if(neighbournode.LeaderLocation == neighbournode.Blockentity.Pos) //true means they're the leader.
-        if(neighbournode.ConnectedNodes != 0) //followers don't have connected nodes
+        if(neighbournode.ConnectedNodes > 0) //followers don't have connected nodes
         {
           this.ConnectedNodes =+ neighbournode.ConnectedNodes; neighbournode.ConnectedNodes = 0; //absorb the node's soul
           neighbournode.LeaderLocation = this.Blockentity.Pos; //tell them to follow you as leader
@@ -178,7 +178,7 @@ namespace ElectricalRevolution
 			tree.SetDouble("voltage",Voltage);
 			tree.SetDouble("current",Current);
       tree.SetBlockPos("LeaderLocation",LeaderLocation);
-      tree.SetInt("LeaderLocation",ConnectedNodes);
+      tree.SetInt("ConnectedNodes",ConnectedNodes);
 			base.ToTreeAttributes(tree);
 		}
 	}
