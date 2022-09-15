@@ -117,20 +117,22 @@ namespace ElectricalRevolution
     public void TryToFindNodes() //runs soon after the block is initalized
     {
       //check each face for neighbours (Up,Down,North,East,South,West)
-      IBlockAccessor blocks = Api.World.BlockAccessor;
       BlockPos blockpos = this.Blockentity.Pos;
-      BlockEntity[] neighbours = new BlockEntity[6]{
-        blocks.GetBlockEntity(blockpos.UpCopy(1)),
-        blocks.GetBlockEntity(blockpos.DownCopy(1)),
-        blocks.GetBlockEntity(blockpos.NorthCopy(1)),
-        blocks.GetBlockEntity(blockpos.EastCopy(1)),
-        blocks.GetBlockEntity(blockpos.SouthCopy(1)),
-        blocks.GetBlockEntity(blockpos.WestCopy(1))
+      BlockPos[] neighbourposes = new BlockPos[6]{
+        blockpos.UpCopy(1),
+        blockpos.DownCopy(1),
+        blockpos.NorthCopy(1),
+        blockpos.EastCopy(1),
+        blockpos.SouthCopy(1),
+        blockpos.WestCopy(1),
       };
-      foreach(BlockEntity updog in neighbours)
+      foreach(BlockPos neighbourpos in neighbourposes)
       {
-        if(updog == null){break;} //for some reason, this always returns null?
-        Api.Logger.Debug("neighbourpos: " + updog.Pos);
+        Api.Logger.Debug("neighbourpos: " + neighbourpos);
+        BlockEntity updog = Api.World.BlockAccessor.GetBlockEntity(neighbourpos); //for some reason, this always returns null?
+        if(updog == null){break;}
+        Api.World.PlaySoundAt(new AssetLocation("game:sounds/effect/anvilhit"),neighbourpos.X,neighbourpos.Y,neighbourpos.Z);
+        Api.Logger.Debug("neighbourBE: " + neighbourpos);
         BEBehaviorElectricalNode neighbournode = updog.GetBehavior<BEBehaviorElectricalNode>();
         if(neighbournode == null){break;}
         //if(neighbournode.LeaderLocation == neighbournode.Blockentity.Pos) //true means they're the leader.
@@ -142,9 +144,9 @@ namespace ElectricalRevolution
           neighbournode.Blockentity.MarkDirty(true);
         }else //they have a leader. Give up your posessions and follow them.
         {
-          BlockEntity leaderBE = blocks.GetBlockEntity(neighbournode.LeaderLocation);
+          BlockEntity leaderBE = Api.World.BlockAccessor.GetBlockEntity(neighbournode.LeaderLocation);
           if(leaderBE == null){break;} //check if it's null first
-          BEBehaviorElectricalNode leadernode = blocks.GetBlockEntity(neighbournode.LeaderLocation).GetBehavior<BEBehaviorElectricalNode>();
+          BEBehaviorElectricalNode leadernode = Api.World.BlockAccessor.GetBlockEntity(neighbournode.LeaderLocation).GetBehavior<BEBehaviorElectricalNode>();
           if(leadernode == null){break;} //make sure someone didn't do the ol switcheroo
           this.LeaderLocation = neighbournode.LeaderLocation; //You're now following the new leader
           leadernode.ConnectedNodes += this.ConnectedNodes; //give up your soul to the leader
