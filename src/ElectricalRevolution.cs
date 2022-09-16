@@ -187,6 +187,16 @@ namespace ElectricalRevolution
 				ckt.Remove(resistorname);
 			}, Privilege.chat);
 
+			sapi.RegisterCommand("blocklist","Read out the block list","",(IServerPlayer splayer, int groupId, CmdArgs args) =>
+            {
+				foreach(KeyValuePair<BlockPos,BEBehaviorElectricalNode> entry in blockmap)
+				{
+					string message = "Block at: " + entry.Key;
+					message = message + " Voltage: " + entry.Value.Voltage;
+					sapi.SendMessage(splayer,GlobalConstants.GeneralChatGroup,message,EnumChatType.CommandSuccess);
+				}
+			}, Privilege.chat);
+
 			sapi.RegisterCommand("here","Where am I? answered in text form","",(IServerPlayer splayer, int groupId, CmdArgs args) =>
             {
 				BlockPos blockpos = splayer.Entity.Pos.AsBlockPos;
