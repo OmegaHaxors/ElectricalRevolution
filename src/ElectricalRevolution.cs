@@ -28,6 +28,8 @@ namespace ElectricalRevolution
 		ICoreAPI api = null;
 		ICoreServerAPI sapi = null;
 		ICoreClientAPI capi = null;
+		public Dictionary<BlockPos, BEBehaviorElectricalNode> blockmap = new Dictionary<BlockPos, BEBehaviorElectricalNode>();
+
 
 		public override void Start(ICoreAPI api)
 		{

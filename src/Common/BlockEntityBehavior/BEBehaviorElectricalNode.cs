@@ -41,8 +41,27 @@ namespace ElectricalRevolution
 			Voltage = 0;  SeriesCapacitance = float.PositiveInfinity;
 			Current = 0; Inductance = 0; ConnectedNodes = 1; LeaderLocation = this.Blockentity.Pos;
 			base.Initialize(api, properties);
-      TryToFindNodes();
+      //TryToFindNodes(); depricated
+      AddToBlockMap();
 		}
+
+    public void AddToBlockMap()
+    {
+      Dictionary<BlockPos, BEBehaviorElectricalNode> blockmap = Api.ModLoader.GetModSystem<ELR>().blockmap; //thanks to G3rste#1850 for this trick.
+      if(!blockmap.ContainsKey(this.Blockentity.Pos)) //don't add if it already exists
+      {blockmap.Add(this.Blockentity.Pos,this);}
+    }
+    public void RemoveFromBlockMap()
+    {
+      Dictionary<BlockPos, BEBehaviorElectricalNode> blockmap = Api.ModLoader.GetModSystem<ELR>().blockmap; //thanks to G3rste#1850 for this trick.
+      if(blockmap.ContainsKey(this.Blockentity.Pos)){blockmap.Remove(this.Blockentity.Pos);} //only remove if it exists
+    }
+
+    public override void OnBlockRemoved()
+    {
+      base.OnBlockRemoved();
+      RemoveFromBlockMap();
+    }
 
 		public override void GetBlockInfo(IPlayer forPlayer, StringBuilder sb)
 		{
@@ -115,7 +134,7 @@ namespace ElectricalRevolution
       sb.AppendFormat(Lang.Get(key, new object[] { unit }), Array.Empty<object>()).AppendLine();
     }
 
-    public void TryToFindNodes() //runs soon after the block is initalized
+    public void TryToFindNodes() //depricated. This system sucks.
     {
       //check each face for neighbours (Up,Down,North,East,South,West)
       BlockPos blockpos = this.Blockentity.Pos;
@@ -164,7 +183,7 @@ namespace ElectricalRevolution
           }
         }else //You're a Recruiter. Recruit some nodes for your Leader.
         {
-          
+          //it's not even finished
         }
       }
     }

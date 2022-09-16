@@ -3,3 +3,5 @@ Core Engine: OmegaHaxors
 Code Quality: Craluminum2413
 Multimeter Model/Texture: Sleeves
 MNA: https://github.com/SpiceSharp/SpiceSharp
+
+Support: G3rste#1850
