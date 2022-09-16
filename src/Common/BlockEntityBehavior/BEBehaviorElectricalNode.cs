@@ -23,23 +23,21 @@ namespace ElectricalRevolution
 	public class BEBehaviorElectricalNode : BlockEntityBehavior
 	{
     public double Power => Voltage * Current;//in Joules
-    public double Resistance; //in Ohms
-		public double ParasiticResistance; //Resistance converted into heat
-		public double Voltage; //in Volts
-		public double SeriesCapacitance; //in Farads
-		public double ParasiticCapacitance; //capacitance that goes to ground
-		public double Current; //in Amps
-		public double Inductance; //in Henries
-    public int ConnectedNodes; //a count of 'connected' nodes
+    public double Resistance = 0; //in Ohms
+		public double ParasiticResistance = 0; //Resistance converted into heat
+		public double Voltage = 0; //in Volts
+		public double SeriesCapacitance = double.PositiveInfinity; //in Farads
+		public double ParasiticCapacitance = 0; //capacitance that goes to ground
+		public double Current = 0; //in Amps
+		public double Inductance = 0; //in Henries
+    public int ConnectedNodes = 1; //a count of 'connected' nodes
     public BlockPos LeaderLocation; //Who is in charge of the ckt?
 
 		public BEBehaviorElectricalNode(BlockEntity blockentity) : base(blockentity){}
 
     public override void Initialize(ICoreAPI api, JsonObject properties)
 		{ //runs when the block is created or loaded
-			Resistance = 0; ParasiticResistance = 0; ParasiticCapacitance = 0;
-			Voltage = 0;  SeriesCapacitance = float.PositiveInfinity;
-			Current = 0; Inductance = 0; ConnectedNodes = 1; LeaderLocation = this.Blockentity.Pos;
+      LeaderLocation = this.Blockentity.Pos;
 			base.Initialize(api, properties);
       this.Blockentity.MarkDirty(); //makes sure that any remote information is updated to the block
       AddToBlockMap();
