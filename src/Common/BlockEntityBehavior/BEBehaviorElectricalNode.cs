@@ -32,6 +32,7 @@ namespace ElectricalRevolution
 		public double Inductance; //in Henries
     public int ConnectedNodes; //a count of 'connected' nodes
     public BlockPos LeaderLocation;
+    public BlockPos[] Followers;
 		public BEBehaviorElectricalNode(BlockEntity blockentity) : base(blockentity){}
 
     public override void Initialize(ICoreAPI api, JsonObject properties)
@@ -118,13 +119,13 @@ namespace ElectricalRevolution
     {
       //check each face for neighbours (Up,Down,North,East,South,West)
       BlockPos blockpos = this.Blockentity.Pos;
-      BlockPos[] neighbourposes = new BlockPos[6]{
+      BlockPos[] neighbourposes = new BlockPos[3]{
         blockpos.UpCopy(1),
-        blockpos.DownCopy(1),
+        //blockpos.DownCopy(1),
         blockpos.NorthCopy(1),
         blockpos.EastCopy(1),
-        blockpos.SouthCopy(1),
-        blockpos.WestCopy(1),
+        //blockpos.SouthCopy(1),
+        //blockpos.WestCopy(1),
       };
       foreach(BlockPos neighbourpos in neighbourposes)
       {
@@ -145,7 +146,10 @@ namespace ElectricalRevolution
               neighbournode.Blockentity.MarkDirty(true);
             }else
             {//The other block should be the leader
-              
+              neighbournode.ConnectedNodes =+ this.ConnectedNodes; this.ConnectedNodes = 0; //give up your soul
+              this.LeaderLocation = neighbournode.Blockentity.Pos; //follow them
+              this.Blockentity.MarkDirty(true);
+              neighbournode.Blockentity.MarkDirty(true);
             }
           }else //they have a leader. Give up your posessions and follow them.
           {//check to see if their leader is even loaded in the first place, if not, become the leader
