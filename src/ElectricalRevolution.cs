@@ -196,9 +196,10 @@ namespace ElectricalRevolution
 				foreach(KeyValuePair<BlockPos,BEBehaviorElectricalNode> entry in blockmap)
 				{
 					string message = "Block at: " + entry.Key;
-					message = message + " Voltage: " + entry.Value.Resistance;
-					sapi.SendMessage(splayer,GlobalConstants.GeneralChatGroup,message,EnumChatType.CommandSuccess);
+					message = message + " Resistance: " + entry.Value.Resistance;
 					entry.Value.Resistance = inputvalue;
+					sapi.SendMessage(splayer,GlobalConstants.GeneralChatGroup,message,EnumChatType.CommandSuccess);
+					entry.Value.Blockentity.MarkDirty(true);
 				}
 			}, Privilege.chat);
 

@@ -41,6 +41,7 @@ namespace ElectricalRevolution
 			Voltage = 0;  SeriesCapacitance = float.PositiveInfinity;
 			Current = 0; Inductance = 0; ConnectedNodes = 1; LeaderLocation = this.Blockentity.Pos;
 			base.Initialize(api, properties);
+      this.Blockentity.MarkDirty(); //makes sure that any remote information is updated to the block
       AddToBlockMap();
 		}
 
