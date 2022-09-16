@@ -144,6 +144,7 @@ namespace ElectricalRevolution
 		{
 			Voltage = tree.GetDouble("voltage");
 			Current = tree.GetDouble("current");
+      Resistance = tree.GetDouble("resistance");
       LeaderLocation = tree.GetBlockPos("LeaderLocation");
       ConnectedNodes = tree.GetInt("ConnectedNodes");
 			base.FromTreeAttributes(tree, world);
@@ -152,6 +153,7 @@ namespace ElectricalRevolution
 		{
 			tree.SetDouble("voltage",Voltage);
 			tree.SetDouble("current",Current);
+      tree.SetDouble("resistance",Resistance);
       tree.SetBlockPos("LeaderLocation",LeaderLocation);
       tree.SetInt("ConnectedNodes",ConnectedNodes);
 			base.ToTreeAttributes(tree);

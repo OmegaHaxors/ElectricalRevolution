@@ -189,11 +189,16 @@ namespace ElectricalRevolution
 
 			sapi.RegisterCommand("blocklist","Read out the block list","",(IServerPlayer splayer, int groupId, CmdArgs args) =>
             {
+				double inputvalue = 0;
+				if(args.Length > 0){
+				Double.TryParse(args[0],out inputvalue);
+				}
 				foreach(KeyValuePair<BlockPos,BEBehaviorElectricalNode> entry in blockmap)
 				{
 					string message = "Block at: " + entry.Key;
-					message = message + " Voltage: " + entry.Value.Voltage;
+					message = message + " Voltage: " + entry.Value.Resistance;
 					sapi.SendMessage(splayer,GlobalConstants.GeneralChatGroup,message,EnumChatType.CommandSuccess);
+					entry.Value.Resistance = inputvalue;
 				}
 			}, Privilege.chat);
 
