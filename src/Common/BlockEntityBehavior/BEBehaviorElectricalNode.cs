@@ -31,25 +31,23 @@ namespace ElectricalRevolution
 		public double Current; //in Amps
 		public double Inductance; //in Henries
     public int ConnectedNodes; //a count of 'connected' nodes
-    public BlockPos LeaderLocation;
-    public BlockPos[] Followers;
+    public BlockPos LeaderLocation; //Who is in charge of the ckt?
+
 		public BEBehaviorElectricalNode(BlockEntity blockentity) : base(blockentity){}
 
     public override void Initialize(ICoreAPI api, JsonObject properties)
-		{
+		{ //runs when the block is created or loaded
 			Resistance = 0; ParasiticResistance = 0; ParasiticCapacitance = 0;
 			Voltage = 0;  SeriesCapacitance = float.PositiveInfinity;
 			Current = 0; Inductance = 0; ConnectedNodes = 1; LeaderLocation = this.Blockentity.Pos;
 			base.Initialize(api, properties);
-      //TryToFindNodes(); depricated
       AddToBlockMap();
 		}
 
     public void AddToBlockMap()
     {
       Dictionary<BlockPos, BEBehaviorElectricalNode> blockmap = Api.ModLoader.GetModSystem<ELR>().blockmap; //thanks to G3rste#1850 for this trick.
-      if(!blockmap.ContainsKey(this.Blockentity.Pos)) //don't add if it already exists
-      {blockmap.Add(this.Blockentity.Pos,this);}
+      if(!blockmap.ContainsKey(this.Blockentity.Pos)){blockmap.Add(this.Blockentity.Pos,this);} //don't add if it already exists
     }
     public void RemoveFromBlockMap()
     {
@@ -57,7 +55,7 @@ namespace ElectricalRevolution
       if(blockmap.ContainsKey(this.Blockentity.Pos)){blockmap.Remove(this.Blockentity.Pos);} //only remove if it exists
     }
 
-    public override void OnBlockRemoved()
+    public override void OnBlockRemoved() //Only removes if block was removed, not if it was unloaded
     {
       base.OnBlockRemoved();
       RemoveFromBlockMap();
@@ -134,7 +132,31 @@ namespace ElectricalRevolution
       sb.AppendFormat(Lang.Get(key, new object[] { unit }), Array.Empty<object>()).AppendLine();
     }
 
-    public void TryToFindNodes() //depricated. This system sucks.
+    public bool HasAttribute(IPlayer player, string treeAttribute)
+    {
+      var rightHandItem = player.InventoryManager.ActiveHotbarSlot.Itemstack.Attributes;
+      var leftHandItem = player.Entity.LeftHandItemSlot.Itemstack.Attributes;
+      return rightHandItem.HasAttribute(treeAttribute) || leftHandItem.HasAttribute(treeAttribute);
+    }
+
+
+    public override void FromTreeAttributes(ITreeAttribute tree, IWorldAccessor world)
+		{
+			Voltage = tree.GetDouble("voltage");
+			Current = tree.GetDouble("current");
+      LeaderLocation = tree.GetBlockPos("LeaderLocation");
+      ConnectedNodes = tree.GetInt("ConnectedNodes");
+			base.FromTreeAttributes(tree, world);
+		}
+		public override void ToTreeAttributes(ITreeAttribute tree)
+		{
+			tree.SetDouble("voltage",Voltage);
+			tree.SetDouble("current",Current);
+      tree.SetBlockPos("LeaderLocation",LeaderLocation);
+      tree.SetInt("ConnectedNodes",ConnectedNodes);
+			base.ToTreeAttributes(tree);
+		}
+        /*public void TryToFindNodes() //depricated. This system sucks.
     {
       //check each face for neighbours (Up,Down,North,East,South,West)
       BlockPos blockpos = this.Blockentity.Pos;
@@ -200,31 +222,6 @@ namespace ElectricalRevolution
       if(poslocal.Z > posremote.Z){return false;}
       throw new ArgumentException//something clearly went wrong. Throw an exception.
       ("ShouldIBeTheLeader was unable to resolve. It's likely because the local and remote position were the same.");
-    }
-
-    public bool HasAttribute(IPlayer player, string treeAttribute)
-    {
-      var rightHandItem = player.InventoryManager.ActiveHotbarSlot.Itemstack.Attributes;
-      var leftHandItem = player.Entity.LeftHandItemSlot.Itemstack.Attributes;
-      return rightHandItem.HasAttribute(treeAttribute) || leftHandItem.HasAttribute(treeAttribute);
-    }
-
-
-    public override void FromTreeAttributes(ITreeAttribute tree, IWorldAccessor world)
-		{
-			Voltage = tree.GetDouble("voltage");
-			Current = tree.GetDouble("current");
-      LeaderLocation = tree.GetBlockPos("LeaderLocation");
-      ConnectedNodes = tree.GetInt("ConnectedNodes");
-			base.FromTreeAttributes(tree, world);
-		}
-		public override void ToTreeAttributes(ITreeAttribute tree)
-		{
-			tree.SetDouble("voltage",Voltage);
-			tree.SetDouble("current",Current);
-      tree.SetBlockPos("LeaderLocation",LeaderLocation);
-      tree.SetInt("ConnectedNodes",ConnectedNodes);
-			base.ToTreeAttributes(tree);
-		}
+    }*/
 	}
 }
