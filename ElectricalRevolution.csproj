@@ -21,6 +21,10 @@
 			<HintPath>S:/Vintagestory/Mods/VSCreativeMod.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
+		<Reference Include="ProtoBuf">
+			<HintPath>S:/Vintagestory/Lib/protobuf-net.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
 	</ItemGroup>
 	
 	

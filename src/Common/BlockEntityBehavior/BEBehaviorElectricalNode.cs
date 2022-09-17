@@ -17,12 +17,13 @@ using SpiceSharp;
 using SpiceSharp.Components;
 using SpiceSharp.Simulations;
 using ElectricalRevolution;
+using ProtoBuf;
 
 namespace ElectricalRevolution
 {
-	public class BEBehaviorElectricalNode : BlockEntityBehavior
+	[ProtoContract(ImplicitFields = ImplicitFields.AllPublic, SkipConstructor = true)]
+  public class BEBehaviorElectricalNode : BlockEntityBehavior
 	{
-    public double Power => Voltage * Current;//in Joules
     public double Resistance = 0; //in Ohms
 		public double ParasiticResistance = 0; //Resistance converted into heat
 		public double Voltage = 0; //in Volts
@@ -109,7 +110,7 @@ namespace ElectricalRevolution
       }
       if (meters["voltmeter"] && meters["ammeter"] && meters["calculator"])
       {
-        AppendMeasurementText(sb, "Node: {0}W", Voltage * Power);
+        AppendMeasurementText(sb, "Node: {0}W", Voltage * Current);
       }
       if (meters["ohmmeter"])
       {

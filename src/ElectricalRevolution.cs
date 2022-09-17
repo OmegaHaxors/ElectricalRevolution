@@ -31,7 +31,15 @@ namespace ElectricalRevolution
 		public Dictionary<BlockPos, BEBehaviorElectricalNode> blockmap = new Dictionary<BlockPos, BEBehaviorElectricalNode>();
 		//warning: These are only instances of blocks, but I made special handling so that you can act on them directly
 
-
+		private void OnSaveGameLoading() //retrive save data here so it gets loaded alongside the rest
+        {
+			byte[] data = sapi.WorldManager.SaveGame.GetData("blockmap");
+            blockmap = data == null ? new Dictionary<BlockPos, BEBehaviorElectricalNode>() : SerializerUtil.Deserialize<Dictionary<BlockPos, BEBehaviorElectricalNode>>(data);
+        }
+		private void OnSaveGameSaving() //attach save data here to it gets saved alongside the rest
+        {
+            sapi.WorldManager.SaveGame.StoreData("blockmap", SerializerUtil.Serialize(blockmap));
+        }
 		public override void Start(ICoreAPI api)
 		{
 			this.api = api;
@@ -136,6 +144,10 @@ namespace ElectricalRevolution
 		public override void StartServerSide(ICoreServerAPI sapi)
 		{
 			this.sapi = sapi;
+
+			sapi.Event.SaveGameLoaded += OnSaveGameLoading;
+            sapi.Event.GameWorldSave += OnSaveGameSaving;
+
 			tran.ExportSimulationData += OnMNAExport;
 			
 			string voltagename = GetNodeNameFromPins("VoltageSource",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(0,0,0)),"0");
