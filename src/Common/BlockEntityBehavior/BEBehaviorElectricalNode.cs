@@ -38,15 +38,32 @@ namespace ElectricalRevolution
     public override void Initialize(ICoreAPI api, JsonObject properties)
 		{ //runs when the block is created or loaded
       LeaderLocation = this.Blockentity.Pos;
-			base.Initialize(api, properties);
+      base.Initialize(api, properties);
       this.Blockentity.MarkDirty(); //makes sure that any remote information is updated to the block
-      AddToBlockMap();
+      AddToOrUpdateBlockMap();
 		}
 
-    public void AddToBlockMap()
+    public void AddToOrUpdateBlockMap()
     {
       Dictionary<BlockPos, BEBehaviorElectricalNode> blockmap = Api.ModLoader.GetModSystem<ELR>().blockmap; //thanks to G3rste#1850 for this trick.
-      if(!blockmap.ContainsKey(this.Blockentity.Pos)){blockmap.Add(this.Blockentity.Pos,this);} //don't add if it already exists
+      if(!blockmap.ContainsKey(this.Blockentity.Pos)){blockmap.Add(this.Blockentity.Pos,this);}//don't add if it already exists
+      else{//update the old object if an entry already exists
+        DownloadDataFromBlockmap();
+        blockmap[this.Blockentity.Pos] = this;
+      }
+    }
+    public void DownloadDataFromBlockmap()
+    {//pulls information from the blockmap and puts it into this object
+      BEBehaviorElectricalNode node = Api.ModLoader.GetModSystem<ELR>().blockmap[this.Blockentity.Pos];
+      this.ConnectedNodes = node.ConnectedNodes;
+      this.Current = node.Current;
+      this.Inductance = node.Inductance;
+      this.Resistance = node.Resistance;
+      this.LeaderLocation = node.LeaderLocation;
+      this.ParasiticCapacitance = node.ParasiticCapacitance;
+      this.ParasiticResistance = node.ParasiticResistance;
+      this.SeriesCapacitance = node.SeriesCapacitance;
+      this.Voltage = node.Voltage;
     }
     public void RemoveFromBlockMap()
     {

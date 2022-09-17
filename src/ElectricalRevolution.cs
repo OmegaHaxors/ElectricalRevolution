@@ -29,6 +29,7 @@ namespace ElectricalRevolution
 		ICoreServerAPI sapi = null;
 		ICoreClientAPI capi = null;
 		public Dictionary<BlockPos, BEBehaviorElectricalNode> blockmap = new Dictionary<BlockPos, BEBehaviorElectricalNode>();
+		//warning: These are only instances of blocks, but I made special handling so that you can act on them directly
 
 
 		public override void Start(ICoreAPI api)
@@ -86,7 +87,6 @@ namespace ElectricalRevolution
 				string componenttype = GetNodeTypeFromName(componentname);
 				if(ckt.TryGetEntity(componentname, out var throwaway)){continue;}//only add to the ckt if it wasn't there before
 				AddComponent(componentname, component);
-				/**/
 
 			}
 		}
@@ -196,6 +196,8 @@ namespace ElectricalRevolution
 				foreach(KeyValuePair<BlockPos,BEBehaviorElectricalNode> entry in blockmap)
 				{
 					string message = "Block at: " + entry.Key;
+					message = message + " Internal hash: " + entry.Value.Blockentity.GetHashCode().ToString();
+					message = message + " External hash: " + api.World.BlockAccessor.GetBlockEntity(entry.Value.Blockentity.Pos)?.GetHashCode().ToString();
 					message = message + " Resistance: " + entry.Value.Resistance;
 					entry.Value.Resistance = inputvalue;
 					sapi.SendMessage(splayer,GlobalConstants.GeneralChatGroup,message,EnumChatType.CommandSuccess);
