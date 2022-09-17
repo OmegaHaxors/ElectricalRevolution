@@ -8,7 +8,7 @@
 		"program": "${env:VINTAGE_STORY}/Vintagestory.exe",
 		"args": [
 			"--playStyle" , "preset-surviveandbuild",
-			"--openWorld" , "testing cube",
+			"--openWorld" , "Strip World",
 			"--addModPath", "${workspaceFolder}/bin/Debug/net461",
 			"--addOrigin" , "${workspaceFolder}/resources/assets",
 		],
