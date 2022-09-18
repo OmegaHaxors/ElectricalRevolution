@@ -21,7 +21,7 @@ using ProtoBuf;
 
 namespace ElectricalRevolution
 {
-	[ProtoContract(ImplicitFields = ImplicitFields.AllPublic, SkipConstructor = true)]
+	[ProtoContract(ImplicitFields = ImplicitFields.AllPublic, SkipConstructor = true)] //huge credit to DEREK#0001 for this one
   public class BEBehaviorElectricalNode : BlockEntityBehavior
 	{
     public double Resistance = 0; //in Ohms
@@ -31,14 +31,14 @@ namespace ElectricalRevolution
 		public double ParasiticCapacitance = 0; //capacitance that goes to ground
 		public double Current = 0; //in Amps
 		public double Inductance = 0; //in Henries
-    public int ConnectedNodes = 1; //a count of 'connected' nodes
-    public BlockPos LeaderLocation; //Who is in charge of the ckt?
+    public double Temperature = 60; //in degree(c)
+    public int ConnectedNodes = 1; //a count of 'connected' nodes, including itself
+    public int CircuitGroup = 0; //which circuit this contributes to 
 
 		public BEBehaviorElectricalNode(BlockEntity blockentity) : base(blockentity){}
 
     public override void Initialize(ICoreAPI api, JsonObject properties)
 		{ //runs when the block is created or loaded
-      LeaderLocation = this.Blockentity.Pos;
       base.Initialize(api, properties);
       this.Blockentity.MarkDirty(); //makes sure that any remote information is updated to the block
       AddToOrUpdateBlockMap();
@@ -60,7 +60,8 @@ namespace ElectricalRevolution
       this.Current = node.Current;
       this.Inductance = node.Inductance;
       this.Resistance = node.Resistance;
-      this.LeaderLocation = node.LeaderLocation;
+      this.CircuitGroup = node.CircuitGroup;
+      this.Temperature = node.Temperature;
       this.ParasiticCapacitance = node.ParasiticCapacitance;
       this.ParasiticResistance = node.ParasiticResistance;
       this.SeriesCapacitance = node.SeriesCapacitance;
@@ -134,14 +135,14 @@ namespace ElectricalRevolution
       }
       if (meters["thermometer"])
       {
-        AppendMeasurementText(sb, "Node: {0}°c", "0");
+        AppendMeasurementText(sb, "Node: {0}°c", Temperature);
       }
       if (!meters["voltmeter"] && !meters["ammeter"] && !meters["ohmmeter"] && !meters["faradmeter"] && !meters["henrymeter"] && !meters["thermometer"])
       {
         sb.AppendFormat(Lang.Get("Hold a meter tool in either hand to get a readout."), Array.Empty<object>()).AppendLine();
       }
       AppendMeasurementText(sb, "Nodes connected: {0}",ConnectedNodes);
-      AppendMeasurementText(sb, "Node Leader at: {0}",LeaderLocation);
+      AppendMeasurementText(sb, "Circuit Group: {0}",CircuitGroup);
     }
 
     private void AppendMeasurementText(StringBuilder sb, string key, object unit)
@@ -159,19 +160,29 @@ namespace ElectricalRevolution
 
     public override void FromTreeAttributes(ITreeAttribute tree, IWorldAccessor world)
 		{
-			Voltage = tree.GetDouble("voltage");
-			Current = tree.GetDouble("current");
-      Resistance = tree.GetDouble("resistance");
-      LeaderLocation = tree.GetBlockPos("LeaderLocation");
+			Voltage = tree.GetDouble("Voltage");
+			Current = tree.GetDouble("Current");
+      Inductance = tree.GetDouble("Inductance");
+      Resistance = tree.GetDouble("Resistance");
+      SeriesCapacitance = tree.GetDouble("SeriesCapacitance");
+      ParasiticCapacitance = tree.GetDouble("ParasiticCapacitance");
+      ParasiticResistance = tree.GetDouble("ParasiticResistance");
+      Temperature = tree.GetDouble("Temperature");
+      CircuitGroup = tree.GetInt("CircuitGroup");
       ConnectedNodes = tree.GetInt("ConnectedNodes");
 			base.FromTreeAttributes(tree, world);
 		}
 		public override void ToTreeAttributes(ITreeAttribute tree)
 		{
-			tree.SetDouble("voltage",Voltage);
-			tree.SetDouble("current",Current);
-      tree.SetDouble("resistance",Resistance);
-      tree.SetBlockPos("LeaderLocation",LeaderLocation);
+			tree.SetDouble("Voltage",Voltage);
+			tree.SetDouble("Current",Current);
+      tree.SetDouble("Inductance",Inductance);
+      tree.SetDouble("Resistance",Resistance);
+      tree.SetDouble("SeriesCapacitance",SeriesCapacitance);
+      tree.SetDouble("ParasiticCapacitance",ParasiticCapacitance);
+      tree.SetDouble("ParasiticResistance",ParasiticResistance);
+      tree.SetDouble("Temperature",Temperature);
+      tree.SetInt("CircuitGroup",CircuitGroup);
       tree.SetInt("ConnectedNodes",ConnectedNodes);
 			base.ToTreeAttributes(tree);
 		}
