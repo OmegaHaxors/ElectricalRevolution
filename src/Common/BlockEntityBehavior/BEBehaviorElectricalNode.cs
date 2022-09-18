@@ -157,6 +157,11 @@ namespace ElectricalRevolution
       return rightHandItem.HasAttribute(treeAttribute) || leftHandItem.HasAttribute(treeAttribute);
     }
 
+    public void UpdateTemperature(double temperature)
+    {
+      //does nothing, yet
+    }
+
 
     public override void FromTreeAttributes(ITreeAttribute tree, IWorldAccessor world)
 		{
