@@ -30,13 +30,15 @@ namespace ElectricalRevolution
 		ICoreClientAPI capi = null;
 		public Dictionary<BlockPos, BEBehaviorElectricalNode> blockmap = new Dictionary<BlockPos, BEBehaviorElectricalNode>();
 		//warning: These are only instances of blocks, but I made special handling so that you can act on them directly
+		//It's not flawless. When loading from a save file, the block entity will be null until its BE is loaded.
+		//However, any information that was set while the block was unloaded will instantly apply when it is.
 
-		private void OnSaveGameLoading() //retrive save data here so it gets loaded alongside the rest
+		private void OnSaveGameLoading() //Read from loaded save data as the world starts up
         {
 			byte[] data = sapi.WorldManager.SaveGame.GetData("blockmap");
             blockmap = data == null ? new Dictionary<BlockPos, BEBehaviorElectricalNode>() : SerializerUtil.Deserialize<Dictionary<BlockPos, BEBehaviorElectricalNode>>(data);
         }
-		private void OnSaveGameSaving() //attach save data here to it gets saved alongside the rest
+		private void OnSaveGameSaving() //Write save data to the world as it shuts down
         {
             sapi.WorldManager.SaveGame.StoreData("blockmap", SerializerUtil.Serialize(blockmap));
         }
@@ -208,7 +210,7 @@ namespace ElectricalRevolution
 				foreach(KeyValuePair<BlockPos,BEBehaviorElectricalNode> entry in blockmap)
 				{
 					string message = "Block at: " + entry.Key;
-					message = message + " Internal hash: " + entry.Value.Blockentity.GetHashCode().ToString();
+					message = message + " Internal hash: " + entry.Value.Blockentity?.GetHashCode().ToString();
 					message = message + " External hash: " + api.World.BlockAccessor.GetBlockEntity(entry.Value.Blockentity.Pos)?.GetHashCode().ToString();
 					message = message + " Resistance: " + entry.Value.Resistance;
 					entry.Value.Resistance = inputvalue;
