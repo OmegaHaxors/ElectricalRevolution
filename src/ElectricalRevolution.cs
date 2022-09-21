@@ -82,16 +82,26 @@ namespace ElectricalRevolution
 		public int sampleriters = 0;
 
 		public void UpdateBlockmap(BlockPos blockpos)
-		{//Checks the neighbours around this position and if valid and unique, adds them to the neighbourmap
+		{//Tries to find neighbours and attach them to eachother
 			BlockPos[] neighbourposes = new BlockPos[6]{blockpos.UpCopy(1),blockpos.DownCopy(1),blockpos.NorthCopy(1),blockpos.EastCopy(1),blockpos.SouthCopy(1),blockpos.WestCopy(1),};
 			foreach(BlockPos neighbourpos in neighbourposes)
 			{
 				//if(blockmap.ContainsKey(neighbourpos)){neighbourmap.Add(neighbourpos,blockmap[neighbourpos]);}
 				if(blockmap.ContainsKey(neighbourpos))
 				{
-					if(!blockmap[blockpos].NodeList.Contains(neighbourpos)){blockmap[blockpos].NodeList = blockmap[blockpos].NodeList.Append<BlockPos>(neighbourpos);}
-					if(!blockmap[neighbourpos].NodeList.Contains(blockpos)){blockmap[neighbourpos].NodeList = blockmap[neighbourpos].NodeList.Append<BlockPos>(blockpos);}
+					if(!blockmap[blockpos].NodeList.Contains(neighbourpos))
+					{
+						blockmap[blockpos].NodeList = blockmap[blockpos].NodeList.Append<BlockPos>(neighbourpos);
+						if(blockmap[blockpos].Blockentity != null){blockmap[blockpos].Blockentity.MarkDirty(true);}
+					}
+					if(!blockmap[neighbourpos].NodeList.Contains(blockpos))
+					{
+						blockmap[neighbourpos].NodeList = blockmap[neighbourpos].NodeList.Append<BlockPos>(blockpos);
+						if(blockmap[neighbourpos].Blockentity != null){blockmap[neighbourpos].Blockentity.MarkDirty(true);}
+					}
 					//adds the blocks to each other if they don't exist already
+					//mark them dirty
+
 				}
 			}
 		}
@@ -255,6 +265,10 @@ namespace ElectricalRevolution
 		}
 		public void TickMNA(float par)
 		{
+			foreach(KeyValuePair<BlockPos,BEBehaviorElectricalNode> entry in blockmap)
+			{
+				UpdateBlockmap(entry.Key);
+			}
 			CreateCircuit();
 			tran.TimeParameters.UseIc = true; //ESSENTIAL!!
 			tran.TimeParameters.StopTime = 1; // run for this amount of cycles
