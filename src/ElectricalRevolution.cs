@@ -35,6 +35,8 @@ namespace ElectricalRevolution
 
 		private void OnSaveGameLoading() //Read from loaded save data as the world starts up
         {
+			//in case of save corruption, uncomment the function below to recover
+			//sapi.WorldManager.SaveGame.StoreData("blockmap",null);
 			byte[] data = sapi.WorldManager.SaveGame.GetData("blockmap");
             blockmap = data == null ? new Dictionary<BlockPos, BEBehaviorElectricalNode>() : SerializerUtil.Deserialize<Dictionary<BlockPos, BEBehaviorElectricalNode>>(data);
         }
@@ -78,6 +80,21 @@ namespace ElectricalRevolution
 		public Dictionary<string,SpiceSharp.Entities.IEntity> componentlist = new Dictionary<string,SpiceSharp.Entities.IEntity>();
 		public Dictionary<string,Export<IBiasingSimulation, double>> ICWatchers = new Dictionary<string,Export<IBiasingSimulation, double>>();
 		public int sampleriters = 0;
+
+		public void UpdateBlockmap(BlockPos blockpos)
+		{//Checks the neighbours around this position and if valid and unique, adds them to the neighbourmap
+			BlockPos[] neighbourposes = new BlockPos[6]{blockpos.UpCopy(1),blockpos.DownCopy(1),blockpos.NorthCopy(1),blockpos.EastCopy(1),blockpos.SouthCopy(1),blockpos.WestCopy(1),};
+			foreach(BlockPos neighbourpos in neighbourposes)
+			{
+				//if(blockmap.ContainsKey(neighbourpos)){neighbourmap.Add(neighbourpos,blockmap[neighbourpos]);}
+				if(blockmap.ContainsKey(neighbourpos))
+				{
+					if(!blockmap[blockpos].NodeList.Contains(neighbourpos)){blockmap[blockpos].NodeList = blockmap[blockpos].NodeList.Append<BlockPos>(neighbourpos);}
+					if(!blockmap[neighbourpos].NodeList.Contains(blockpos)){blockmap[neighbourpos].NodeList = blockmap[neighbourpos].NodeList.Append<BlockPos>(blockpos);}
+					//adds the blocks to each other if they don't exist already
+				}
+			}
+		}
 		
 		
 		public void CreateCircuit()

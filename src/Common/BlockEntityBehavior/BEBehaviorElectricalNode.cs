@@ -32,13 +32,14 @@ namespace ElectricalRevolution
 		public double Current = 0; //in Amps
 		public double Inductance = 0; //in Henries
     public double Temperature = 60; //in degree(c)
-    public int ConnectedNodes = 1; //a count of 'connected' nodes, including itself
-    public int CircuitGroup = 0; //which circuit this contributes to 
+    public BlockPos LeaderNode = null; //who is in charge of this joint?
+    public BlockPos[] NodeList = new BlockPos[0];
 
 		public BEBehaviorElectricalNode(BlockEntity blockentity) : base(blockentity){}
 
     public override void Initialize(ICoreAPI api, JsonObject properties)
 		{ //runs when the block is created or loaded
+      if(LeaderNode == null){LeaderNode = this.Blockentity.Pos;}
       base.Initialize(api, properties);
       this.Blockentity.MarkDirty(); //makes sure that any remote information is updated to the block
       AddToOrUpdateBlockMap();
@@ -56,11 +57,11 @@ namespace ElectricalRevolution
     public void DownloadDataFromBlockmap()
     {//pulls information from the blockmap and puts it into this object
       BEBehaviorElectricalNode node = Api.ModLoader.GetModSystem<ELR>().blockmap[this.Blockentity.Pos];
-      this.ConnectedNodes = node.ConnectedNodes;
+      this.LeaderNode = node.LeaderNode;
       this.Current = node.Current;
       this.Inductance = node.Inductance;
       this.Resistance = node.Resistance;
-      this.CircuitGroup = node.CircuitGroup;
+      this.NodeList = node.NodeList;
       this.Temperature = node.Temperature;
       this.ParasiticCapacitance = node.ParasiticCapacitance;
       this.ParasiticResistance = node.ParasiticResistance;
@@ -141,8 +142,8 @@ namespace ElectricalRevolution
       {
         sb.AppendFormat(Lang.Get("Hold a meter tool in either hand to get a readout."), Array.Empty<object>()).AppendLine();
       }
-      AppendMeasurementText(sb, "Nodes connected: {0}",ConnectedNodes);
-      AppendMeasurementText(sb, "Circuit Group: {0}",CircuitGroup);
+      AppendMeasurementText(sb, "Leader Node: {0}",LeaderNode);
+      AppendMeasurementText(sb, "Connected Nodes: {0}",NodeList.Length);
     }
 
     private void AppendMeasurementText(StringBuilder sb, string key, object unit)
@@ -173,8 +174,8 @@ namespace ElectricalRevolution
       ParasiticCapacitance = tree.GetDouble("ParasiticCapacitance");
       ParasiticResistance = tree.GetDouble("ParasiticResistance");
       Temperature = tree.GetDouble("Temperature");
-      CircuitGroup = tree.GetInt("CircuitGroup");
-      ConnectedNodes = tree.GetInt("ConnectedNodes");
+      NodeList = SerializerUtil.Deserialize<BlockPos[]>(tree.GetBytes("NodeList"));
+      LeaderNode = tree.GetBlockPos("LeaderNode");
 			base.FromTreeAttributes(tree, world);
 		}
 		public override void ToTreeAttributes(ITreeAttribute tree)
@@ -187,8 +188,8 @@ namespace ElectricalRevolution
       tree.SetDouble("ParasiticCapacitance",ParasiticCapacitance);
       tree.SetDouble("ParasiticResistance",ParasiticResistance);
       tree.SetDouble("Temperature",Temperature);
-      tree.SetInt("CircuitGroup",CircuitGroup);
-      tree.SetInt("ConnectedNodes",ConnectedNodes);
+      tree.SetBytes("NodeList",SerializerUtil.Serialize<BlockPos[]>(NodeList));
+      tree.SetBlockPos("LeaderNode",LeaderNode);
 			base.ToTreeAttributes(tree);
 		}
         /*public void TryToFindNodes() //depricated. This system sucks.
