@@ -95,6 +95,7 @@ namespace ElectricalRevolution
 					BEBehaviorElectricalNode thisnode = blockmap[thispos];
 					BEBehaviorElectricalNode thatnode = blockmap[thatpos];
 					BEBehaviorElectricalNode leadernode = blockmap[thatnode.LeaderNode]; //the neighbour block's leader
+					//ERROR: leadernode might no longer exist. Will need to act if this is ever not the case
 					if(thisnode.NodeList.Length > 0){thisblockisleader = true;}
 					if(thatnode.NodeList.Length > 0){thatblockisleader = true;}
 
@@ -113,9 +114,9 @@ namespace ElectricalRevolution
 						}else//thisblockisleader, thatblockisrecruiter
 						{//Give up your blocklist to their leader and follow their leader
 							leadernode.NodeList = leadernode.NodeList.Union(thisnode.NodeList).ToArray(); //give your list to the leader
-							thisnode.LeaderNode = thatpos; //point to the new leader
+							thisnode.LeaderNode = thatnode.LeaderNode; //point to the new leader
 							foreach(BlockPos recruiterpos in (BlockPos[])thisnode.NodeList.Clone()) //a clone of your list
-							{blockmap[recruiterpos].LeaderNode = thatpos;
+							{blockmap[recruiterpos].LeaderNode = thatnode.LeaderNode;
 							if(blockmap[recruiterpos].Blockentity!= null){blockmap[recruiterpos].Blockentity.MarkDirty(true);}
 							} //tell your recruiters to move to the new leader
 							thisnode.NodeList = new BlockPos[0]; //now you're a recruiter
