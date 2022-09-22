@@ -105,14 +105,19 @@ namespace ElectricalRevolution
 							thisnode.NodeList = thisnode.NodeList.Union(thatnode.NodeList).ToArray(); //merges the lists, ignoring duplicates
 							thatnode.LeaderNode = thispos; //they now point to you
 							foreach(BlockPos recruiterpos in (BlockPos[])thatnode.NodeList.Clone()) //work on a clone to avoid racism
-							{blockmap[recruiterpos].LeaderNode = thispos;} //tell their recruiters to move to the new leader
+							{
+								blockmap[recruiterpos].LeaderNode = thispos;
+								if(blockmap[recruiterpos].Blockentity!= null){blockmap[recruiterpos].Blockentity.MarkDirty(true);}
+								} //tell their recruiters to move to the new leader
 							thatnode.NodeList = new BlockPos[0]; //now it's a recruiter
 						}else//thisblockisleader, thatblockisrecruiter
 						{//Give up your blocklist to their leader and follow their leader
 							leadernode.NodeList = leadernode.NodeList.Union(thisnode.NodeList).ToArray(); //give your list to the leader
 							thisnode.LeaderNode = thatpos; //point to the new leader
 							foreach(BlockPos recruiterpos in (BlockPos[])thisnode.NodeList.Clone()) //a clone of your list
-							{blockmap[recruiterpos].LeaderNode = thatpos;} //tell your recruiters to move to the new leader
+							{blockmap[recruiterpos].LeaderNode = thatpos;
+							if(blockmap[recruiterpos].Blockentity!= null){blockmap[recruiterpos].Blockentity.MarkDirty(true);}
+							} //tell your recruiters to move to the new leader
 							thisnode.NodeList = new BlockPos[0]; //now you're a recruiter
 						}
 
@@ -125,7 +130,8 @@ namespace ElectricalRevolution
 							leadernode.NodeList = leadernode.NodeList.Union(thatnode.NodeList).ToArray();
 							thatnode.LeaderNode = thispos;
 							foreach(BlockPos recruiterpos in (BlockPos[])thatnode.NodeList.Clone()) //work on a clone to avoid racism
-							{blockmap[recruiterpos].LeaderNode = thisnode.LeaderNode;}
+							{blockmap[recruiterpos].LeaderNode = thisnode.LeaderNode;
+							if(blockmap[recruiterpos].Blockentity!= null){blockmap[recruiterpos].Blockentity.MarkDirty(true);}}
 							thatnode.NodeList = new BlockPos[0];
 
 						}else{//neitherblockisleader
@@ -134,7 +140,8 @@ namespace ElectricalRevolution
 							{
 								leadernode.NodeList = leadernode.NodeList.Union(blockmap[thatnode.LeaderNode].NodeList).ToArray();
 								foreach(BlockPos recruiterpos in (BlockPos[])thatnode.NodeList.Clone()) //work on a clone to avoid racism
-								{blockmap[recruiterpos].LeaderNode = thisnode.LeaderNode;}
+								{blockmap[recruiterpos].LeaderNode = thisnode.LeaderNode;
+								if(blockmap[recruiterpos].Blockentity!= null){blockmap[recruiterpos].Blockentity.MarkDirty(true);}}
 								thatnode.LeaderNode = thisnode.LeaderNode;
 							}
 						}
