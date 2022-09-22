@@ -40,6 +40,7 @@ namespace ElectricalRevolution
     public override void Initialize(ICoreAPI api, JsonObject properties)
 		{ //runs when the block is created or loaded
       if(LeaderNode == null){LeaderNode = this.Blockentity.Pos;}
+      if(NodeList.Count() <= 0){NodeList = NodeList.Append<BlockPos>(LeaderNode);}
       base.Initialize(api, properties);
       this.Blockentity.MarkDirty(); //makes sure that any remote information is updated to the block
       AddToOrUpdateBlockMap();

@@ -15,6 +15,7 @@ using System.Text;
 using SpiceSharp;
 using SpiceSharp.Components;
 using SpiceSharp.Simulations;
+using System.Linq;
 
 [assembly: ModInfo( "ElectricalRevolution",
 	Description = "Bringing the electrical revolution to Vintage Story",
@@ -81,24 +82,67 @@ namespace ElectricalRevolution
 		public Dictionary<string,Export<IBiasingSimulation, double>> ICWatchers = new Dictionary<string,Export<IBiasingSimulation, double>>();
 		public int sampleriters = 0;
 
-		public void UpdateBlockmap(BlockPos blockpos)
+		public void UpdateBlockmap(BlockPos thispos)
 		{//Tries to find neighbours and attach them to eachother
-			BlockPos[] neighbourposes = new BlockPos[6]{blockpos.UpCopy(1),blockpos.DownCopy(1),blockpos.NorthCopy(1),blockpos.EastCopy(1),blockpos.SouthCopy(1),blockpos.WestCopy(1),};
-			foreach(BlockPos neighbourpos in neighbourposes)
+			BlockPos[] neighbourposes = new BlockPos[6]{thispos.UpCopy(1),thispos.DownCopy(1),thispos.NorthCopy(1),thispos.EastCopy(1),thispos.SouthCopy(1),thispos.WestCopy(1),};
+			foreach(BlockPos thatpos in neighbourposes)
 			{
-				//if(blockmap.ContainsKey(neighbourpos)){neighbourmap.Add(neighbourpos,blockmap[neighbourpos]);}
-				if(blockmap.ContainsKey(neighbourpos))
+				//if(blockmap.ContainsKey(thatpos)){neighbourmap.Add(thatpos,blockmap[thatpos]);}
+				if(blockmap.ContainsKey(thatpos))
 				{
-					if(!blockmap[blockpos].NodeList.Contains(neighbourpos))
+					bool thisblockisleader = false;
+					bool thatblockisleader = false;
+					BEBehaviorElectricalNode thisnode = blockmap[thispos];
+					BEBehaviorElectricalNode thatnode = blockmap[thatpos];
+					BEBehaviorElectricalNode leadernode = blockmap[thatnode.LeaderNode]; //the neighbour block's leader
+					if(thisnode.NodeList.Length > 0){thisblockisleader = true;}
+					if(thatnode.NodeList.Length > 0){thatblockisleader = true;}
+
+					if(thisblockisleader)
 					{
-						blockmap[blockpos].NodeList = blockmap[blockpos].NodeList.Append<BlockPos>(neighbourpos);
-						if(blockmap[blockpos].Blockentity != null){blockmap[blockpos].Blockentity.MarkDirty(true);}
+						if(thatblockisleader)
+						{//Take responsiblity, set them as a recruiter and relieve them of their duties.
+							thisnode.NodeList = thisnode.NodeList.Union(thatnode.NodeList).ToArray(); //merges the lists, ignoring duplicates
+							thatnode.LeaderNode = thispos; //they now point to you
+							foreach(BlockPos recruiterpos in (BlockPos[])thatnode.NodeList.Clone()) //work on a clone to avoid racism
+							{blockmap[recruiterpos].LeaderNode = thispos;} //tell their recruiters to move to the new leader
+							thatnode.NodeList = new BlockPos[0]; //now it's a recruiter
+						}else//thisblockisleader, thatblockisrecruiter
+						{//Give up your blocklist to their leader and follow their leader
+							leadernode.NodeList = leadernode.NodeList.Union(thisnode.NodeList).ToArray(); //give your list to the leader
+							thisnode.LeaderNode = thatpos; //point to the new leader
+							foreach(BlockPos recruiterpos in (BlockPos[])thisnode.NodeList.Clone()) //a clone of your list
+							{blockmap[recruiterpos].LeaderNode = thatpos;} //tell your recruiters to move to the new leader
+							thisnode.NodeList = new BlockPos[0]; //now you're a recruiter
+						}
+
+					}else{ //thisblockisrecruiter
+						leadernode = blockmap[thisnode.LeaderNode]; //you're a recruiter, so your leader matters here
+
+						if(thatblockisleader)
+						{//recruit them to your leader and relieve them of their duties
+
+							leadernode.NodeList = leadernode.NodeList.Union(thatnode.NodeList).ToArray();
+							thatnode.LeaderNode = thispos;
+							foreach(BlockPos recruiterpos in (BlockPos[])thatnode.NodeList.Clone()) //work on a clone to avoid racism
+							{blockmap[recruiterpos].LeaderNode = thisnode.LeaderNode;}
+							thatnode.NodeList = new BlockPos[0];
+
+						}else{//neitherblockisleader
+							//if they have a different leader, tell them to join yours (merging)
+							if(leadernode.LeaderNode != thatnode.LeaderNode)
+							{
+								leadernode.NodeList = leadernode.NodeList.Union(blockmap[thatnode.LeaderNode].NodeList).ToArray();
+								foreach(BlockPos recruiterpos in (BlockPos[])thatnode.NodeList.Clone()) //work on a clone to avoid racism
+								{blockmap[recruiterpos].LeaderNode = thisnode.LeaderNode;}
+								thatnode.LeaderNode = thisnode.LeaderNode;
+							}
+						}
+						//important: Make sure to notify the leader's recruiters when taking over them so there aren't any floating references
 					}
-					if(!blockmap[neighbourpos].NodeList.Contains(blockpos))
-					{
-						blockmap[neighbourpos].NodeList = blockmap[neighbourpos].NodeList.Append<BlockPos>(blockpos);
-						if(blockmap[neighbourpos].Blockentity != null){blockmap[neighbourpos].Blockentity.MarkDirty(true);}
-					}
+
+
+					//if(blockmap[thatpos].Blockentity != null){blockmap[thatpos].Blockentity.MarkDirty(true);}
 					//adds the blocks to each other if they don't exist already
 					//mark them dirty
 
