@@ -153,9 +153,7 @@ namespace ElectricalRevolution
 							}
 						}
 						
-					}//now that we're all done, lets just markdirty thispos and thatpos just to be safe.
-					if(thisnode.Blockentity!= null){thisnode.Blockentity.MarkDirty(true);}
-					if(thatnode.Blockentity!= null){thatnode.Blockentity.MarkDirty(true);}
+					}
 				}
 			}
 		}
@@ -335,6 +333,7 @@ namespace ElectricalRevolution
 			foreach(KeyValuePair<BlockPos,BEBehaviorElectricalNode> entry in blockmap)
 			{
 				UpdateBlockmap(entry.Key);
+				if(entry.Value.Blockentity != null){entry.Value.Blockentity.MarkDirty(true);}
 			}
 			CreateCircuit();
 			tran.TimeParameters.UseIc = true; //ESSENTIAL!!
