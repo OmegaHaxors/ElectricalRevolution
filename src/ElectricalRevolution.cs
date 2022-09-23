@@ -330,6 +330,7 @@ namespace ElectricalRevolution
 		}
 		public void TickMNA(float par)
 		{
+			if(blockmap.Count < 1){return;}//list is null. Don't start yet.
 			if(blockmap.First().Value.NodeList == null){return;}//isn't loaded yet, skip this tick (fucking hate I have to do this)
 			foreach(KeyValuePair<BlockPos,BEBehaviorElectricalNode> entry in blockmap)
 			{
