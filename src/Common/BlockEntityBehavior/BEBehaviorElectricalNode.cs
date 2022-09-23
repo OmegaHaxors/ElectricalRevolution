@@ -25,10 +25,10 @@ namespace ElectricalRevolution
   public class BEBehaviorElectricalNode : BlockEntityBehavior
 	{
     public double Resistance = 0; //in Ohms
-		public double ParasiticResistance = 0; //Resistance converted into heat
 		public double Voltage = 0; //in Volts
 		public double SeriesCapacitance = double.PositiveInfinity; //in Farads
 		public double ParasiticCapacitance = 0; //capacitance that goes to ground
+    public double ParasiticResistance = 0; //Resistance for the Parasitic Capacitors
 		public double Current = 0; //in Amps
 		public double Inductance = 0; //in Henries
     public double Temperature = 60; //in degree(c)
@@ -62,7 +62,7 @@ namespace ElectricalRevolution
       this.Current = node.Current;
       this.Inductance = node.Inductance;
       this.Resistance = node.Resistance;
-      this.NodeList = node.NodeList;
+      if(node.NodeList != null){this.NodeList = node.NodeList;}else{this.NodeList = new BlockPos[0];}
       this.Temperature = node.Temperature;
       this.ParasiticCapacitance = node.ParasiticCapacitance;
       this.ParasiticResistance = node.ParasiticResistance;

@@ -37,7 +37,7 @@ namespace ElectricalRevolution
 		private void OnSaveGameLoading() //Read from loaded save data as the world starts up
         {
 			//in case of save corruption, uncomment the function below to recover
-			sapi.WorldManager.SaveGame.StoreData("blockmap",null);
+			//sapi.WorldManager.SaveGame.StoreData("blockmap",null);
 			byte[] data = sapi.WorldManager.SaveGame.GetData("blockmap");
             blockmap = data == null ? new Dictionary<BlockPos, BEBehaviorElectricalNode>() : SerializerUtil.Deserialize<Dictionary<BlockPos, BEBehaviorElectricalNode>>(data);
         }
@@ -330,6 +330,7 @@ namespace ElectricalRevolution
 		}
 		public void TickMNA(float par)
 		{
+			if(blockmap.First().Value.NodeList == null){return;}//isn't loaded yet, skip this tick (fucking hate I have to do this)
 			foreach(KeyValuePair<BlockPos,BEBehaviorElectricalNode> entry in blockmap)
 			{
 				UpdateBlockmap(entry.Key);
