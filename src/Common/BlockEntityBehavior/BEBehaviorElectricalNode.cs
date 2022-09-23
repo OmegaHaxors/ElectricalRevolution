@@ -77,8 +77,29 @@ namespace ElectricalRevolution
 
     public override void OnBlockRemoved() //Only removes if block was removed, not if it was unloaded
     {
+      Dictionary<BlockPos, BEBehaviorElectricalNode> blockmap = Api.ModLoader.GetModSystem<ELR>().blockmap; //thanks to G3rste#1850 for this trick.
+
+      //if any blocks get removed, destroy the entire network, as it's no longer valid
+      if(this.NodeList.Length > 0) //check if you're a leader
+      {//if you are, you can destroy the network yourself.
+        foreach(BlockPos recruiterpos in (BlockPos[])NodeList.Clone()) //notify your recruiters
+        {
+          blockmap[recruiterpos].LeaderNode = recruiterpos;
+          blockmap[recruiterpos].NodeList = new BlockPos[1]{recruiterpos}; //set them as a self-leader
+        }
+      }else //you're a recruiter. Make your leader do the heavy lifting
+      {
+        BEBehaviorElectricalNode leadernode = blockmap[LeaderNode];
+        foreach(BlockPos recruiterpos in (BlockPos[])leadernode.NodeList.Clone()) //notify your leader's recruiters
+        {
+          blockmap[recruiterpos].LeaderNode = recruiterpos;
+          blockmap[recruiterpos].NodeList = new BlockPos[1]{recruiterpos}; //set them as a self-leader
+        }
+      }
       base.OnBlockRemoved();
       RemoveFromBlockMap();
+      
+      
     }
 
 		public override void GetBlockInfo(IPlayer forPlayer, StringBuilder sb)

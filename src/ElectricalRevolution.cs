@@ -152,8 +152,10 @@ namespace ElectricalRevolution
 								thatnode.LeaderNode = thisnode.LeaderNode;
 							}
 						}
-						//important: Make sure to notify the leader's recruiters when taking over them so there aren't any floating references
-					}
+						
+					}//now that we're all done, lets just markdirty thispos and thatpos just to be safe.
+					if(thisnode.Blockentity!= null){thisnode.Blockentity.MarkDirty(true);}
+					if(thatnode.Blockentity!= null){thatnode.Blockentity.MarkDirty(true);}
 				}
 			}
 		}
