@@ -37,7 +37,7 @@ namespace ElectricalRevolution
 		private void OnSaveGameLoading() //Read from loaded save data as the world starts up
         {
 			//in case of save corruption, uncomment the function below to recover
-			//sapi.WorldManager.SaveGame.StoreData("blockmap",null);
+			sapi.WorldManager.SaveGame.StoreData("blockmap",null);
 			byte[] data = sapi.WorldManager.SaveGame.GetData("blockmap");
             blockmap = data == null ? new Dictionary<BlockPos, BEBehaviorElectricalNode>() : SerializerUtil.Deserialize<Dictionary<BlockPos, BEBehaviorElectricalNode>>(data);
         }
@@ -103,6 +103,8 @@ namespace ElectricalRevolution
 					{
 						if(thatblockisleader)
 						{//Take responsiblity, set them as a recruiter and relieve them of their duties.
+							//don't do it if the other node is better suited
+							if(!NodeTieBreaker(thispos,thatpos)){continue;} //this should bias leaders towards lesser X values.
 							thisnode.NodeList = thisnode.NodeList.Union(thatnode.NodeList).ToArray(); //merges the lists, ignoring duplicates
 							thatnode.LeaderNode = thispos; //they now point to you
 							foreach(BlockPos recruiterpos in (BlockPos[])thatnode.NodeList.Clone()) //work on a clone to avoid racism
@@ -113,6 +115,8 @@ namespace ElectricalRevolution
 							thatnode.NodeList = new BlockPos[0]; //now it's a recruiter
 						}else//thisblockisleader, thatblockisrecruiter
 						{//Give up your blocklist to their leader and follow their leader
+						//but make sure to check you're not just following yourself
+						if(thatnode.LeaderNode == thisnode.LeaderNode){continue;} //don't let a leader give up its role to itself
 							leadernode.NodeList = leadernode.NodeList.Union(thisnode.NodeList).ToArray(); //give your list to the leader
 							thisnode.LeaderNode = thatnode.LeaderNode; //point to the new leader
 							foreach(BlockPos recruiterpos in (BlockPos[])thisnode.NodeList.Clone()) //a clone of your list
@@ -127,6 +131,8 @@ namespace ElectricalRevolution
 
 						if(thatblockisleader)
 						{//recruit them to your leader and relieve them of their duties
+						//but check to make sure they're not your leader first
+							if(thisnode.LeaderNode == leadernode.LeaderNode){continue;} //should prevent instant recruit betrayals
 
 							leadernode.NodeList = leadernode.NodeList.Union(thatnode.NodeList).ToArray();
 							thatnode.LeaderNode = thispos;
@@ -137,7 +143,7 @@ namespace ElectricalRevolution
 
 						}else{//neitherblockisleader
 							//if they have a different leader, tell them to join yours (merging)
-							if(leadernode.LeaderNode != thatnode.LeaderNode)
+							if(thisnode.LeaderNode != thatnode.LeaderNode)
 							{
 								leadernode.NodeList = leadernode.NodeList.Union(blockmap[thatnode.LeaderNode].NodeList).ToArray();
 								foreach(BlockPos recruiterpos in (BlockPos[])thatnode.NodeList.Clone()) //work on a clone to avoid racism
@@ -148,15 +154,22 @@ namespace ElectricalRevolution
 						}
 						//important: Make sure to notify the leader's recruiters when taking over them so there aren't any floating references
 					}
-
-
-					//if(blockmap[thatpos].Blockentity != null){blockmap[thatpos].Blockentity.MarkDirty(true);}
-					//adds the blocks to each other if they don't exist already
-					//mark them dirty
-
 				}
 			}
 		}
+		public bool NodeTieBreaker(BlockPos poslocal, BlockPos posremote)
+    	{ //tiebreaker function. Smallest X, then Y, then Z wins. True if thisnode wins. False if thatnode wins.
+      		if(poslocal.X < posremote.X){return true;}
+      		if(poslocal.X > posremote.X){return false;}
+			//in most cases, it will resolve here, but in the case of a tie...
+			if(poslocal.Y < posremote.Y){return true;}
+     	 	if(poslocal.Y > posremote.Y){return false;}
+    		//gee golly, still not resolved? 
+      		if(poslocal.Z < posremote.Z){return true;}
+    	 	if(poslocal.Z > posremote.Z){return false;}
+    	 	throw new ArgumentException//something clearly went wrong. Throw an exception.
+      		("ShouldIBeTheLeader was unable to resolve. It's likely because the local and remote position were the same.");
+   		}
 		
 		
 		public void CreateCircuit()
