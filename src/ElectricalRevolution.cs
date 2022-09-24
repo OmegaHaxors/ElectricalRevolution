@@ -74,9 +74,6 @@ namespace ElectricalRevolution
             }
         }
 		public Circuit ckt = null;
-		//public RealVoltageExport inputExport = null;
-		//public RealVoltageExport outputExport = null;
-		//public RealCurrentExport currentexport = null;
 		public Transient tran = new Transient("tran", 1, 1);
 		public Dictionary<string,SpiceSharp.Entities.IEntity> componentlist = new Dictionary<string,SpiceSharp.Entities.IEntity>();
 		public Dictionary<string,Export<IBiasingSimulation, double>> ICWatchers = new Dictionary<string,Export<IBiasingSimulation, double>>();
@@ -96,6 +93,7 @@ namespace ElectricalRevolution
 					BEBehaviorElectricalNode thatnode = blockmap[thatpos];
 					BEBehaviorElectricalNode leadernode = blockmap[thatnode.LeaderNode]; //the neighbour block's leader
 					//ERROR: leadernode might no longer exist. Will need to act if this is ever not the case
+					//leader now signals off if it's ever removed, this should prevent the issue from arising
 					if(thisnode.NodeList.Length > 0){thisblockisleader = true;}
 					if(thatnode.NodeList.Length > 0){thatblockisleader = true;}
 
@@ -154,6 +152,21 @@ namespace ElectricalRevolution
 						}
 						
 					}
+				}
+			}
+			CreateLeaderMap();
+		}
+		public BlockPos[] leadermap = new BlockPos[0];
+		public void CreateLeaderMap()//this is what compiles the blockmap into many seperate leadermaps so they can be turned into ckts and ultimately trans
+		{//unlike the leadermap, it's not saved since it's created from the blockmap every tick
+			
+			leadermap = new BlockPos[0]; //first we wipe it clean to prevent any pollution from last tick
+			foreach(KeyValuePair<BlockPos,BEBehaviorElectricalNode> entry in blockmap)
+			{
+				if(entry.Key == entry.Value.LeaderNode) 
+				{//this is a leader
+					leadermap = leadermap.Append(entry.Key); //add it to the leadermap
+					//sapi.BroadcastMessageToAllGroups("Added: "+ entry.Key,EnumChatType.CommandSuccess);
 				}
 			}
 		}
@@ -261,9 +274,21 @@ namespace ElectricalRevolution
 
 			sapi.World.RegisterGameTickListener(TickMNA,1000); //tick the MNA every second
 
-			sapi.RegisterCommand("mna","Test the MNA","",(IServerPlayer splayer, int groupId, CmdArgs args) =>
+			sapi.RegisterCommand("mna","Gets a readout of the leaderlist","",(IServerPlayer splayer, int groupId, CmdArgs args) =>
             {
-			if(args.Length > 0){
+				string message = "";
+				foreach(BlockPos leaderpos in leadermap)
+				{
+					message = message + leaderpos + "[ ";
+					BlockPos[] recruiterlist = blockmap[leaderpos].NodeList;
+					foreach(BlockPos recruiterpos in recruiterlist)
+					{
+						message = message + recruiterpos + "  ";
+					}
+					message = message + "]";
+				}
+				sapi.SendMessage(splayer,GlobalConstants.GeneralChatGroup,message,EnumChatType.CommandSuccess);
+			/*if(args.Length > 0){
 			Double.TryParse(args[0],out double dcsetting);
 			ckt.TryGetEntity(GetNodeNameFromPins("VoltageSource",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(0,0,0)),"0"), out SpiceSharp.Entities.IEntity component);
 			if(!component.TrySetParameter("dc",dcsetting)){throw new NullReferenceException("MNA command couldn't set the parameter: dc");}
@@ -280,13 +305,7 @@ namespace ElectricalRevolution
 			if(!node.TryGetProperty("ic", out nodeic)){throw new NullReferenceException("MNA command couldn't get the property: ic");}
 			double inductorreadout = nodeic;
 			sapi.BroadcastMessageToAllGroups("capacitor: "+capacitorreadout+" inductor: "+inductorreadout,EnumChatType.CommandSuccess);
-
-
-			//try and save this MNA to the world? What could go wrong.
-			//sapi.WorldManager.SaveGame.StoreData("ckt",SerializerUtil.Serialize<Circuit>(ckt));
-			//sapi.WorldManager.SaveGame.StoreData("tran",SerializerUtil.Serialize<Transient>(tran));
-			//everything.
-
+			*/
 			}, Privilege.chat);
 			sapi.RegisterCommand("yeet","Try to delete a component and see what happens","",(IServerPlayer splayer, int groupId, CmdArgs args) =>
             {
