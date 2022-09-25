@@ -73,11 +73,8 @@ namespace ElectricalRevolution
                 }    
             }
         }
-		public Circuit ckt = null;
-		public Transient tran = new Transient("tran", 1, 1);
 		public Dictionary<string,SpiceSharp.Entities.IEntity> componentlist = new Dictionary<string,SpiceSharp.Entities.IEntity>();
 		public Dictionary<string,Export<IBiasingSimulation, double>> ICWatchers = new Dictionary<string,Export<IBiasingSimulation, double>>();
-		public int sampleriters = 0;
 
 		public void UpdateBlockmap(BlockPos thispos)
 		{//Tries to find neighbours and attach them to eachother
@@ -166,9 +163,10 @@ namespace ElectricalRevolution
 				if(entry.Key == entry.Value.LeaderNode) 
 				{//this is a leader
 					leadermap = leadermap.Append(entry.Key); //add it to the leadermap
-					//sapi.BroadcastMessageToAllGroups("Added: "+ entry.Key,EnumChatType.CommandSuccess);
 				}
 			}
+
+			
 		}
 		public bool NodeTieBreaker(BlockPos poslocal, BlockPos posremote)
     	{ //tiebreaker function. Smallest X, then Y, then Z wins. True if thisnode wins. False if thatnode wins.
@@ -185,37 +183,34 @@ namespace ElectricalRevolution
    		}
 		
 		
-		public void CreateCircuit()
+		public void CreateCircuit(Transient tran, out Circuit ckt)
 		{
-			if(ckt == null){
 			ckt = new Circuit
 			(new Sampler("sampler",TimePoints, (sender, exargs) =>
                 {
-						sampleriters++;
-						//applying KISS principles here
+						tran.TimeParameters.StopTime =- 1; //reduce timeparameters by 1 per cycle (it stops at 0)
 				})
-			);}
+			);
 			foreach(KeyValuePair<string,SpiceSharp.Entities.IEntity> entry in componentlist)
 			{
 				string componentname = entry.Key;
 				SpiceSharp.Entities.IEntity component = entry.Value;
 				string componenttype = GetNodeTypeFromName(componentname);
 				if(ckt.TryGetEntity(componentname, out var throwaway)){continue;}//only add to the ckt if it wasn't there before
-				AddComponent(componentname, component);
+				AddComponent(tran,ckt,componentname,component);
 
 			}
 		}
 		public void OnMNAExport(object sender, ExportDataEventArgs exargs)
 		{
+			Transient tran = (Transient)sender;
 
-			if(sampleriters >= 10)
+			if(tran.TimeParameters.StopTime <= 0)
 			{
-			tran.TimeParameters.StopTime = 0; //stop the simulation
-			MNAFinish(); //Tell the MNA to upload the information from this tick into the next so that it can pass on.
-			sampleriters = 0;
+			//MNAFinish(ckt,tran); //Tell the MNA to upload the information from this tick into the next so that it can pass on.
 			}
 		}
-		public void MNAFinish() //finish the tick then shut down
+		public void MNAFinish(Circuit ckt, Transient tran) //finish the tick then shut down
 		{
 			foreach(KeyValuePair<string,Export<IBiasingSimulation, double>> entry in ICWatchers)
 			{
@@ -224,9 +219,9 @@ namespace ElectricalRevolution
 				ckt.TryGetEntity(nodename, out SpiceSharp.Entities.IEntity node);
 				node.SetParameter("ic",ICWatchers[nodename].Value);
 			}
-			castMNAtoblocks(); //sends data from the MNA into the blockents
+			castMNAtoblocks(tran); //sends data from the MNA into the blockents
 		}
-		public void castMNAtoblocks()
+		public void castMNAtoblocks(Transient tran)
 		{
 			foreach(KeyValuePair<string,SpiceSharp.Entities.IEntity> entry in componentlist)
 			{
@@ -254,10 +249,8 @@ namespace ElectricalRevolution
 
 			sapi.Event.SaveGameLoaded += OnSaveGameLoading;
             sapi.Event.GameWorldSave += OnSaveGameSaving;
-
-			tran.ExportSimulationData += OnMNAExport;
 			
-			string voltagename = GetNodeNameFromPins("VoltageSource",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(0,0,0)),"0");
+			/*string voltagename = GetNodeNameFromPins("VoltageSource",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(0,0,0)),"0");
 			string resistorname = GetNodeNameFromPins("Resistor",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(0,0,0)),GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)));
 			string diodename = GetNodeNameFromPins("Diode",GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)),GetPinNameAtPosition(new BlockPos(12,3,10),new Vec3i(0,0,0)));
 			DiodeModel diodemodel = CreateDiodeModel(diodename);
@@ -270,7 +263,7 @@ namespace ElectricalRevolution
 			componentlist.Add(resistorname, new Resistor(resistorname,GetPositivePin(resistorname),GetNegativePin(resistorname),1));
 			componentlist.Add(diodename, new Diode(diodename,GetPositivePin(diodename),GetNegativePin(diodename),diodemodelname));
 			componentlist.Add(inductorname, new Inductor(inductorname,GetPositivePin(inductorname),GetNegativePin(inductorname),1));
-			componentlist.Add(capacitorname, new Capacitor(capacitorname,GetPositivePin(capacitorname),GetNegativePin(capacitorname),1));
+			componentlist.Add(capacitorname, new Capacitor(capacitorname,GetPositivePin(capacitorname),GetNegativePin(capacitorname),1)); */
 
 			sapi.World.RegisterGameTickListener(TickMNA,1000); //tick the MNA every second
 
@@ -307,10 +300,6 @@ namespace ElectricalRevolution
 			sapi.BroadcastMessageToAllGroups("capacitor: "+capacitorreadout+" inductor: "+inductorreadout,EnumChatType.CommandSuccess);
 			*/
 			}, Privilege.chat);
-			sapi.RegisterCommand("yeet","Try to delete a component and see what happens","",(IServerPlayer splayer, int groupId, CmdArgs args) =>
-            {
-				ckt.Remove(resistorname);
-			}, Privilege.chat);
 
 			sapi.RegisterCommand("blocklist","Read out the block list","",(IServerPlayer splayer, int groupId, CmdArgs args) =>
             {
@@ -330,7 +319,7 @@ namespace ElectricalRevolution
 				}
 			}, Privilege.chat);
 
-			sapi.RegisterCommand("here","Where am I? answered in text form","",(IServerPlayer splayer, int groupId, CmdArgs args) =>
+			/*sapi.RegisterCommand("here","Where am I? answered in text form","",(IServerPlayer splayer, int groupId, CmdArgs args) =>
             {
 				BlockPos blockpos = splayer.Entity.Pos.AsBlockPos;
 				Vec3i subblockpos = new Vec3i(0,0,0);
@@ -345,7 +334,7 @@ namespace ElectricalRevolution
 				splayer.SendMessage(GlobalConstants.GeneralChatGroup,nodetype,EnumChatType.CommandSuccess);
 				splayer.SendMessage(GlobalConstants.GeneralChatGroup,pospinname,EnumChatType.CommandSuccess);
 				splayer.SendMessage(GlobalConstants.GeneralChatGroup,negpinname,EnumChatType.CommandSuccess);
-			}, Privilege.chat);
+			}, Privilege.chat);*/
 		}
 		public void TickMNA(float par)
 		{
@@ -356,15 +345,16 @@ namespace ElectricalRevolution
 				UpdateBlockmap(entry.Key);
 				if(entry.Value.Blockentity != null){entry.Value.Blockentity.MarkDirty(true);}
 			}
-			CreateCircuit();
-			tran.TimeParameters.UseIc = true; //ESSENTIAL!!
-			tran.TimeParameters.StopTime = 1; // run for this amount of cycles
-            tran.Run(ckt);
-
-			//if(cktdata != null){ckt = SerializerUtil.Deserialize<Circuit>(sapi.WorldManager.SaveGame.GetData("ckt"));}
-			//if(trandata != null){tran = SerializerUtil.Deserialize<Transient>(sapi.WorldManager.SaveGame.GetData("tran"));}
-			//if(cktdata != null){cktdata = SerializerUtil.Serialize<Circuit>(ckt); sapi.WorldManager.SaveGame.StoreData("ckt",cktdata);}
-			//if(trandata != null){trandata = SerializerUtil.Serialize<Transient>(tran);sapi.WorldManager.SaveGame.StoreData("tran",trandata);}
+			
+			foreach(BlockPos leaderpos in leadermap)
+			{//build a ckt and then run a tran for each leader
+				Transient tran = new Transient("LeaderTran:"+leaderpos, 1, 1);
+				tran.ExportSimulationData += OnMNAExport;
+				CreateCircuit(tran, out Circuit ckt);
+				tran.TimeParameters.UseIc = true;
+				tran.TimeParameters.StopTime = 10;
+				tran.Run(ckt);
+			}
 		}
 		public DiodeModel CreateDiodeModel(string name)
         {
@@ -450,7 +440,7 @@ namespace ElectricalRevolution
 			
 			return new BlockPos(x,y,z);
 		}
-		public void AddComponent(string nodename,SpiceSharp.Entities.IEntity component)
+		public void AddComponent(Transient tran, Circuit ckt,string nodename,SpiceSharp.Entities.IEntity component)
 		{
 
 			//in (paracap) -> pararesistor -> component+ -> component- -> parainduct -> out
