@@ -74,7 +74,7 @@ namespace ElectricalRevolution
             }
         }
 		public Dictionary<string,SpiceSharp.Entities.IEntity> componentlist = new Dictionary<string,SpiceSharp.Entities.IEntity>();
-		public Dictionary<string,Export<IBiasingSimulation, double>> ICWatchers = new Dictionary<string,Export<IBiasingSimulation, double>>();
+		public Dictionary<string,Dictionary<string,double>> InitialConditions = new Dictionary<string,Dictionary<string,double>>();
 
 		public void UpdateBlockmap(BlockPos thispos)
 		{//Tries to find neighbours and attach them to eachother
@@ -198,7 +198,6 @@ namespace ElectricalRevolution
 				string componenttype = GetNodeTypeFromName(componentname);
 				if(ckt.TryGetEntity(componentname, out var throwaway)){continue;}//only add to the ckt if it wasn't there before
 				AddComponent(tran,ckt,componentname,component);
-
 			}
 		}
 		public void OnMNAExport(object sender, ExportDataEventArgs exargs)
@@ -207,18 +206,20 @@ namespace ElectricalRevolution
 
 			if(tran.TimeParameters.StopTime <= 0)
 			{
-			//MNAFinish(ckt,tran); //Tell the MNA to upload the information from this tick into the next so that it can pass on.
+			MNAFinish(tran); //Tell the MNA to upload the information from this tick into the next so that it can pass on.
 			}
 		}
-		public void MNAFinish(Circuit ckt, Transient tran) //finish the tick then shut down
+		public void MNAFinish(Transient tran) //finish the tick then shut down
 		{
-			foreach(KeyValuePair<string,Export<IBiasingSimulation, double>> entry in ICWatchers)
-			{
-				string nodename = entry.Key;
-				double readout = entry.Value.Value; //awkwaaard
-				ckt.TryGetEntity(nodename, out SpiceSharp.Entities.IEntity node);
-				node.SetParameter("ic",ICWatchers[nodename].Value);
-			}
+			//foreach(KeyValuePair<string,Export<IBiasingSimulation, double>> entry in ICWatchers)
+			//{
+				//string nodename = entry.Key;
+				//double readout = entry.Value.Value; //awkwaaard
+				
+			InitialConditions[tran.Name] = tran.TimeParameters.InitialConditions; //this saves the IC for later
+				//ckt.TryGetEntity(nodename, out SpiceSharp.Entities.IEntity node);
+				//node.SetParameter("ic",ICWatchers[nodename].Value);
+			//}
 			castMNAtoblocks(tran); //sends data from the MNA into the blockents
 		}
 		public void castMNAtoblocks(Transient tran)
@@ -367,24 +368,24 @@ namespace ElectricalRevolution
 			diodemodel.SetParameter("tt",20e-9); //transit time
             return diodemodel;
         }
-		public string GetPinNameAtPosition(BlockPos blockpos, Vec3i subblockpos) //Converts blockpos and subblockpos into a pin
+		public static string GetPinNameAtPosition(BlockPos blockpos, Vec3i subblockpos) //Converts blockpos and subblockpos into a pin
 		{
 			if(blockpos == null || subblockpos == null){return "0";}
 			string returnstring = "" + blockpos + " (" + subblockpos.X + ", " + subblockpos.Y + ", "+ subblockpos.Z + ")";
 			return returnstring;
 		}
-		public string GetNodeNameFromPins(string componenttype, string pinnamepos, string pinnameneg) //Converts a pinpos and a pinneg into a nodename
+		public static string GetNodeNameFromPins(string componenttype, string pinnamepos, string pinnameneg) //Converts a pinpos and a pinneg into a nodename
 		{
 			string returnstring = componenttype + ":" + pinnamepos + "~" + pinnameneg;
 			return returnstring;
 		}
-		public string GetNodeTypeFromName(string nodename)
+		public static string GetNodeTypeFromName(string nodename)
 		{
 			string returnstring = nodename;
 			int stopat = returnstring.IndexOf(":");
 			return returnstring.Substring(0, stopat);
 		}
-		public string GetPositivePin(string nodename) //Extracts the positive pin from a node's name.
+		public static string GetPositivePin(string nodename) //Extracts the positive pin from a node's name.
 		{
 			string returnstring = nodename;
 			int startat = returnstring.IndexOf(":") + 1;
@@ -392,13 +393,13 @@ namespace ElectricalRevolution
 			int length = stopat-startat;
 			return returnstring.Substring(startat, length);
 		}
-		public string GetNegativePin(string nodename) //Extracts the negative pin from the node's name.
+		public static string GetNegativePin(string nodename) //Extracts the negative pin from the node's name.
 		{
 			string returnstring = nodename;
 			int startat = returnstring.IndexOf("~") + 1;
 			return returnstring.Substring(startat);
 		}
-		public BlockPos PinToBlockPos(string pinname,out Vec3i sublocation) //converts a pin into a blockpos
+		public static BlockPos PinToBlockPos(string pinname,out Vec3i sublocation) //converts a pin into a blockpos
 		{
 			string workstring = pinname;
 			//the pin name will look like this:
@@ -466,12 +467,10 @@ namespace ElectricalRevolution
 
 					case "Inductor":
 					ckt.Add(component as Inductor);
-					ICWatchers.Add(nodename,new RealCurrentExport(tran,nodename)); //lets us get current later
 					break;
 
 					case "Capacitor":
 					ckt.Add(component as Capacitor);
-					ICWatchers.Add(nodename,new RealVoltageExport(tran,GetPositivePin(nodename),GetNegativePin(nodename))); //lets us get voltage later
 					break;
 
 					case "Diode":

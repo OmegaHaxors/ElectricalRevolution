@@ -48,6 +48,11 @@ namespace ElectricalRevolution
 
     public void AddToOrUpdateBlockMap()
     {
+      //just going to add a temporary component here for testing purposes
+      Dictionary<string, SpiceSharp.Entities.IEntity> componentlist = Api.ModLoader.GetModSystem<ELR>().componentlist; //thanks to G3rste#1850 for this trick.
+      string resistorname = ELR.GetNodeNameFromPins("Resistor",ELR.GetPinNameAtPosition(this.Blockentity.Pos,new Vec3i(0,0,0)),ELR.GetPinNameAtPosition(this.Blockentity.Pos.NorthCopy(),new Vec3i(0,0,0)));
+      componentlist[resistorname] = new Resistor(resistorname,ELR.GetPositivePin(resistorname),ELR.GetNegativePin(resistorname),1);
+
       Dictionary<BlockPos, BEBehaviorElectricalNode> blockmap = Api.ModLoader.GetModSystem<ELR>().blockmap; //thanks to G3rste#1850 for this trick.
       if(!blockmap.ContainsKey(this.Blockentity.Pos)){blockmap.Add(this.Blockentity.Pos,this);}//don't add if it already exists
       else{//update the old object if an entry already exists
