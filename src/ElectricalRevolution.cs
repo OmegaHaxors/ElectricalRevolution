@@ -74,7 +74,7 @@ namespace ElectricalRevolution
             }
         }
 		public Dictionary<string,SpiceSharp.Entities.IEntity> componentlist = new Dictionary<string,SpiceSharp.Entities.IEntity>();
-		public Dictionary<string,Dictionary<string,double>> InitialConditions = new Dictionary<string,Dictionary<string,double>>();
+		public Dictionary<string,SpiceSharp.Simulations.TimeParameters> TPlist = new Dictionary<string,SpiceSharp.Simulations.TimeParameters>();
 
 		public void UpdateBlockmap(BlockPos thispos)
 		{//Tries to find neighbours and attach them to eachother
@@ -185,12 +185,12 @@ namespace ElectricalRevolution
 		
 		public void CreateCircuit(Transient tran, out Circuit ckt)
 		{
-			ckt = new Circuit
-			(new Sampler("sampler",TimePoints, (sender, exargs) =>
+			ckt = new Circuit();
+			/*(new Sampler("sampler",TimePoints, (sender, exargs) =>
                 {
 						tran.TimeParameters.StopTime =- 1; //reduce timeparameters by 1 per cycle (it stops at 0)
 				})
-			);
+			); */
 			foreach(KeyValuePair<string,SpiceSharp.Entities.IEntity> entry in componentlist)
 			{
 				string componentname = entry.Key;
@@ -216,7 +216,8 @@ namespace ElectricalRevolution
 				//string nodename = entry.Key;
 				//double readout = entry.Value.Value; //awkwaaard
 				
-			InitialConditions[tran.Name] = tran.TimeParameters.InitialConditions; //this saves the IC for later
+			TPlist[tran.Name] = tran.TimeParameters; //this saves the TP for later
+
 				//ckt.TryGetEntity(nodename, out SpiceSharp.Entities.IEntity node);
 				//node.SetParameter("ic",ICWatchers[nodename].Value);
 			//}
@@ -349,9 +350,17 @@ namespace ElectricalRevolution
 			
 			foreach(BlockPos leaderpos in leadermap)
 			{//build a ckt and then run a tran for each leader
-				Transient tran = new Transient("LeaderTran:"+leaderpos, 1, 1);
-				tran.ExportSimulationData += OnMNAExport;
+			Transient tran = new Transient("LeaderTran:"+leaderpos,1,1);
+				if(TPlist.ContainsKey(tran.Name))
+				{//restore TP from the previous tick if it exists
+				tran = new Transient("LeaderTran:"+leaderpos,TPlist["LeaderTran:"+leaderpos]);
+				}else{
+				tran.ExportSimulationData += OnMNAExport; //otherwise register a new event handler
+				} 
 				CreateCircuit(tran, out Circuit ckt);
+				ckt.Add(new Sampler("sampler",TimePoints, (sender, exargs) =>
+                {tran.TimeParameters.StopTime =- 1; //reduces timeparameters stoptime by 1 per cycle (so it stops at 0)
+				}));//add the sampler at the end
 				tran.TimeParameters.UseIc = true;
 				tran.TimeParameters.StopTime = 10;
 				tran.Run(ckt);
