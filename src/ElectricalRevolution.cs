@@ -114,6 +114,7 @@ namespace ElectricalRevolution
 					BEBehaviorElectricalNode leadernode = blockmap[thatnode.LeaderNode]; //the neighbour block's leader
 					//ERROR: leadernode might no longer exist. Will need to act if this is ever not the case
 					//leader now signals off if it's ever removed, this should prevent the issue from arising
+					if(thisnode.NodeList == null || thatnode.NodeList == null){return;} //oh look, this problem again
 					if(thisnode.NodeList.Length > 0){thisblockisleader = true;}
 					if(thatnode.NodeList.Length > 0){thatblockisleader = true;}
 
@@ -273,6 +274,88 @@ namespace ElectricalRevolution
 			}
 		}
 
+		public override void StartServerSide(ICoreServerAPI sapi)
+		{
+			this.sapi = sapi;
+
+			sapi.Event.SaveGameLoaded += OnSaveGameLoading;
+            sapi.Event.GameWorldSave += OnSaveGameSaving;
+			
+			/*string voltagename = GetNodeNameFromPins("VoltageSource",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(0,0,0)),"0");
+			string resistorname = GetNodeNameFromPins("Resistor",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(0,0,0)),GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)));
+			string diodename = GetNodeNameFromPins("Diode",GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)),GetPinNameAtPosition(new BlockPos(12,3,10),new Vec3i(0,0,0)));
+			DiodeModel diodemodel = CreateDiodeModel(diodename);
+			string diodemodelname = diodemodel.Name;
+			string inductorname = GetNodeNameFromPins("Inductor",GetPinNameAtPosition(new BlockPos(12,3,10),new Vec3i(0,0,0)),GetPinNameAtPosition(new BlockPos(13,3,10),new Vec3i(0,0,0)));
+			string capacitorname = GetNodeNameFromPins("Capacitor",GetPinNameAtPosition(new BlockPos(13,3,10),new Vec3i(0,0,0)),"0");
+			
+			//make some basic components with hard-coded locations, you know, for testing.
+			componentlist.Add(voltagename, new VoltageSource(voltagename,GetPositivePin(voltagename),GetNegativePin(voltagename),1));
+			componentlist.Add(resistorname, new Resistor(resistorname,GetPositivePin(resistorname),GetNegativePin(resistorname),1));
+			componentlist.Add(diodename, new Diode(diodename,GetPositivePin(diodename),GetNegativePin(diodename),diodemodelname));
+			componentlist.Add(inductorname, new Inductor(inductorname,GetPositivePin(inductorname),GetNegativePin(inductorname),1));
+			componentlist.Add(capacitorname, new Capacitor(capacitorname,GetPositivePin(capacitorname),GetNegativePin(capacitorname),1)); */
+
+			sapi.World.RegisterGameTickListener(TickMNA,1000); //tick the MNA every second
+
+			sapi.RegisterCommand("mna","Gets a readout of the leaderlist","",(IServerPlayer splayer, int groupId, CmdArgs args) =>
+            {
+				string message = "";
+				foreach(BlockPos leaderpos in leadermap)
+				{
+					message = message + leaderpos + "[ ";
+					if(!blockmap.ContainsKey(leaderpos))
+					{
+						sapi.SendMessage(splayer,GlobalConstants.GeneralChatGroup,"No MNA running",EnumChatType.CommandSuccess);
+						return;
+					}
+					BlockPos[] recruiterlist = blockmap[leaderpos].NodeList;
+					foreach(BlockPos recruiterpos in recruiterlist)
+					{
+						message = message + recruiterpos + "  ";
+					}
+					message = message + "]";
+				}
+				sapi.SendMessage(splayer,GlobalConstants.GeneralChatGroup,message,EnumChatType.CommandSuccess);
+			/*if(args.Length > 0){
+			Double.TryParse(args[0],out double dcsetting);
+			ckt.TryGetEntity(GetNodeNameFromPins("VoltageSource",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(0,0,0)),"0"), out SpiceSharp.Entities.IEntity component);
+			if(!component.TrySetParameter("dc",dcsetting)){throw new NullReferenceException("MNA command couldn't set the parameter: dc");}
+			}
+
+			string capacitorname = GetNodeNameFromPins("Capacitor",GetPinNameAtPosition(new BlockPos(13,3,10),new Vec3i(0,0,0)),"0");
+			string inductorname = GetNodeNameFromPins("Inductor",GetPinNameAtPosition(new BlockPos(12,3,10),new Vec3i(0,0,0)),GetPinNameAtPosition(new BlockPos(13,3,10),new Vec3i(0,0,0)));
+			//double inductorreadout = ICWatchers[inductorname].Value;
+			//double capacitorreadout = ICWatchers[capacitorname].Value;
+			ckt.TryGetEntity(capacitorname, out SpiceSharp.Entities.IEntity node);
+			if(!node.TryGetProperty("ic", out double nodeic)){throw new NullReferenceException("MNA command couldn't get the property: ic");}
+			double capacitorreadout = nodeic;
+			ckt.TryGetEntity(inductorname, out node);
+			if(!node.TryGetProperty("ic", out nodeic)){throw new NullReferenceException("MNA command couldn't get the property: ic");}
+			double inductorreadout = nodeic;
+			sapi.BroadcastMessageToAllGroups("capacitor: "+capacitorreadout+" inductor: "+inductorreadout,EnumChatType.CommandSuccess);
+			*/
+			}, Privilege.chat);
+
+			sapi.RegisterCommand("blocklist","Read out the block list","",(IServerPlayer splayer, int groupId, CmdArgs args) =>
+            {
+				double inputvalue = 0;
+				if(args.Length > 0){
+				Double.TryParse(args[0],out inputvalue);
+				}
+				foreach(KeyValuePair<BlockPos,BEBehaviorElectricalNode> entry in blockmap)
+				{
+					string message = "Block at: " + entry.Key;
+					message = message + " Internal hash: " + entry.Value.Blockentity?.GetHashCode().ToString();
+					message = message + " External hash: " + api.World.BlockAccessor.GetBlockEntity(entry.Value.Blockentity.Pos)?.GetHashCode().ToString();
+					message = message + " Resistance: " + entry.Value.Resistance;
+					entry.Value.Resistance = inputvalue;
+					sapi.SendMessage(splayer,GlobalConstants.GeneralChatGroup,message,EnumChatType.CommandSuccess);
+					entry.Value.Blockentity.MarkDirty(true);
+				}
+			}, Privilege.chat);
+
+
 		public void TickMNA(float par)
 		{
 			if(blockmap.Count < 1){return;}//list is null. Don't start yet.
@@ -291,13 +374,13 @@ namespace ElectricalRevolution
 				tran = new Transient("LeaderTran:"+leaderpos,TPlist["LeaderTran:"+leaderpos]);
 				}else{
 				tran.ExportSimulationData += OnMNAExport; //otherwise register a new event handler
-				} 
-				CreateCircuit(tran, out Circuit ckt);
-				ckt.Add(new Sampler("sampler",TimePoints, (sender, exargs) =>
-                {tran.TimeParameters.StopTime =- 1; //reduces timeparameters stoptime by 1 per cycle (so it stops at 0)
-				}));//add the sampler at the end
+				}
 				tran.TimeParameters.UseIc = true;
 				tran.TimeParameters.StopTime = 10;
+				CreateCircuit(tran, out Circuit ckt);
+				ckt.Add(new Sampler("sampler",TimePoints, (sender, exargs) =>
+                {tran.TimeParameters.StopTime -= 1; //reduces timeparameters stoptime by 1 per cycle (so it stops at 0)
+				}));//add the sampler at the end
 				tran.Run(ckt);
 			}
 		}
@@ -313,6 +396,94 @@ namespace ElectricalRevolution
 			diodemodel.SetParameter("tt",20e-9); //transit time
             return diodemodel;
         }
+
+		public static string GetPinNameAtPosition(BlockPos blockpos, Vec3i subblockpos) //Converts blockpos and subblockpos into a pin
+		{
+			if(blockpos == null || subblockpos == null){return "0";}
+			string returnstring = "" + blockpos + " (" + subblockpos.X + ", " + subblockpos.Y + ", "+ subblockpos.Z + ")";
+			return returnstring;
+		}
+		public static string GetNodeNameFromPins(string componenttype, string pinnamepos, string pinnameneg) //Converts a pinpos and a pinneg into a nodename
+		{
+			string returnstring = componenttype + ":" + pinnamepos + "~" + pinnameneg;
+			return returnstring;
+		}
+		public static string GetNodeTypeFromName(string nodename)
+		{
+			string returnstring = nodename;
+			int stopat = returnstring.IndexOf(":");
+			return returnstring.Substring(0, stopat);
+		}
+		public static string GetPositivePin(string nodename) //Extracts the positive pin from a node's name.
+		{
+			string returnstring = nodename;
+			int startat = returnstring.IndexOf(":") + 1;
+			int stopat = returnstring.IndexOf("~");
+			int length = stopat-startat;
+			return returnstring.Substring(startat, length);
+		}
+		public static string GetNegativePin(string nodename) //Extracts the negative pin from the node's name.
+		{
+			string returnstring = nodename;
+			int startat = returnstring.IndexOf("~") + 1;
+			return returnstring.Substring(startat);
+		}
+		public static BlockPos PinToBlockPos(string pinname,out Vec3i sublocation) //converts a pin into a blockpos
+		{
+			string workstring = pinname;
+			//the pin name will look like this:
+			//10, 3, 10 (0, 0, 0)
+			int startat = 0;
+			int stopat = workstring.IndexOf(",");
+			int length = stopat-startat;
+			int x = workstring.Substring(startat,length).ToInt(-666);
+			workstring = workstring.Substring(stopat+2); //2 gets rid of the comma and space
+			//3, 10 (0, 0, 0)
+			stopat = workstring.IndexOf(",");
+			length = stopat-startat;
+			int y = workstring.Substring(startat,length).ToInt(-666);
+			workstring = workstring.Substring(stopat+2); //2 gets rid of the comma and space
+			//should be 10 (0, 0, 0)
+			stopat = workstring.IndexOf("(")-1;
+			length = stopat-startat;
+			int z = workstring.Substring(startat,length).ToInt(-666);
+			workstring = workstring.Substring(stopat+2); //get rid of the space and )
+			//0, 0, 0)
+			stopat = workstring.IndexOf(",");
+			length = stopat-startat;
+			int sex = workstring.Substring(startat,length).ToInt(-666); //sub-x. What the E stands for is as much of a mystery as what the N in ELN stands for.
+			workstring = workstring.Substring(stopat+2);
+			//should be 0, 0)
+			stopat = workstring.IndexOf(",");
+			length = stopat-startat;
+			int sey = workstring.Substring(startat,length).ToInt(-666);
+			workstring = workstring.Substring(stopat+2);
+			//should be 0)
+			stopat = workstring.IndexOf(")");
+			length = stopat-startat;
+			int sez = workstring.Substring(startat,length).ToInt(-666);
+			workstring = workstring.Substring(stopat+1); //should be empty now
+
+			sublocation = new Vec3i(sex,sey,sez);
+			//sapi.BroadcastMessageToAllGroups("x:"+x+"y:"+y+"z:"+z+ ": "+workstring + " subblock:" + sublocation.ToString(),EnumChatType.CommandError);
+			//x:11y:3z:10:  subblock:X=1,Y=0,Z=0
+			
+			return new BlockPos(x,y,z);
+		}
+		public void AddComponent(Transient tran, Circuit ckt,string nodename,SpiceSharp.Entities.IEntity component)
+		{
+
+			//in (paracap) -> pararesistor -> component+ -> component- -> parainduct -> out
+
+			string pos = GetPositivePin(nodename);
+			string neg = GetNegativePin(nodename);
+			string componenttype = GetNodeTypeFromName(nodename);
+			switch(componenttype)
+				{
+					case "VoltageSource":
+					ckt.Add(component as VoltageSource);
+					break;
+
 
 		public void AddComponent(Transient tran, Circuit ckt,string nodename,SpiceSharp.Entities.IEntity component)
         {
@@ -344,10 +515,38 @@ namespace ElectricalRevolution
                     ckt.Add(component as Capacitor);
                     break;
 
+
                 case "Diode":
                     ckt.Add(component as Diode);
                     ckt.Add(CreateDiodeModel(component.Name));
                     break;
+
+					default:
+					break;
+				}
+				//now we check the pos and neg pins to make sure they have unideal components
+				//they need to be there to ensure all components are self-sufficient and won't crash
+			
+			if(!pos.EqualsFast("0"))//prevents the creation of unideal components on earth ground, as they're not needed there
+			{
+			string subpos = pos + "UNIDEAL";
+			if(!ckt.TryGetEntity(GetNodeNameFromPins("Resistor",pos,subpos),out var throwaway)) //no need to add the component if it already exists
+			{
+				ckt.Add(new Resistor(GetNodeNameFromPins("Resistor",pos,subpos),pos,subpos,0.01)); //add a resistor with 0.01ohm
+				ckt.Add(new Resistor(GetNodeNameFromPins("Resistor",pos,"0"),pos,"0",1e12)); //adds a very high resistance to ground
+				ckt.Add(new Capacitor(GetNodeNameFromPins("Capacitor",subpos,"0"),subpos,"0",0.01)); //add a capacitor-To-Ground with 0.01 farads
+			} 
+			}
+			if(!neg.EqualsFast("0")){
+			string subneg = neg + "UNIDEAL";
+			if(!ckt.TryGetEntity(GetNodeNameFromPins("Resistor",neg,subneg),out var throwaway)) //no need to add the component if it already exists
+			{
+				ckt.Add(new Resistor(GetNodeNameFromPins("Resistor",neg,subneg),neg,subneg,0.01)); //add a resistor with 0.01ohm
+				ckt.Add(new Resistor(GetNodeNameFromPins("Resistor",neg,"0"),neg,"0",1e12)); //adds a very high resistance to ground
+				ckt.Add(new Capacitor(GetNodeNameFromPins("Capacitor",subneg,"0"),subneg,"0",0.01)); //add a capacitor-To-Ground with 0.01 farads
+			}
+			}
+
 
                 default:
                     break;
