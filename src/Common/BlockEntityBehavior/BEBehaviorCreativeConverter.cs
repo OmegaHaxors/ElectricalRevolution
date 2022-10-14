@@ -41,14 +41,16 @@ namespace ElectricalRevolution
 			this.Api.World.PlaySoundAt(new AssetLocation("game:sounds/toggleswitch"), pos.X, pos.Y, pos.Z, byPlayer, false, 16f, 1f);
 			return true;
 		}
-		public override void GetBlockInfo(IPlayer forPlayer, StringBuilder sb)
-		{
-			base.GetBlockInfo(forPlayer, sb);
-      sb.AppendFormat(Lang.Get("Generator Power: {0}%", new object[]
-      {
-        10 * this.powerSetting
-      }), Array.Empty<object>()).AppendLine();
-		}
+
+        public override void GetBlockInfo(IPlayer forPlayer, StringBuilder sb)
+        {
+            base.GetBlockInfo(forPlayer, sb);
+            sb.AppendFormat(Lang.Get("Generator Power: {0}%", new object[]
+            {
+                10 * this.powerSetting
+            }), Array.Empty<object>()).AppendLine();
+        }
+
 		public override void FromTreeAttributes(ITreeAttribute tree, IWorldAccessor world)
 		{
 			this.powerSetting = tree.GetFloat("powerconverted", 0f);

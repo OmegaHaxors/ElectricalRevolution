@@ -26,18 +26,29 @@ namespace ElectricalRevolution
 		//Random rred = new Random(765364143);
 		//Random rblue = new Random(742543);
 		//Random rgreen = new Random(321467);
+
 		public override void Initialize(ICoreAPI api)
 		{
 			base.Initialize(api);
-			//RegisterGameTickListener(UpdateNBT,1000);//only runs on the server (set to 100)
+			//RegisterGameTickListener(UpdateNBT, 1000);//only runs on the server (set to 100)
 		}
+
 		public override void CreateBehaviors(Block block, IWorldAccessor worldForResolve)
 		{
 			base.CreateBehaviors(block, worldForResolve);
 			this.nodebehavior = base.GetBehavior<BEBehaviorElectricalNode>();
 		}
-		public byte[] GetLightHsv(){return lightHsv;}
-		public void SetLightLevel(byte lightvalue){byte oldvalue = lightHsv[2]; lightHsv[2] = lightvalue;SendLightUpdate();}
+
+        public byte[] GetLightHsv()
+        {
+            return lightHsv;
+        }
+
+		public void SetLightLevel(byte lightvalue)
+        {
+            byte oldvalue = lightHsv[2]; lightHsv[2] = lightvalue;SendLightUpdate();
+        }
+
 		public void SetLightColor(int red, int green, int blue)
 		{
 			int[] HSVfromRGB = ColorUtil.RgbToHsvInts(red,green,blue);
@@ -46,24 +57,34 @@ namespace ElectricalRevolution
 			lightHsv[2] = (byte)HSVfromRGB[2];
 			SendLightUpdate();
 		}
+
 		public void SetLightHsv(byte[] hsv)
-		{lightHsv = hsv; SendLightUpdate();}
-		public void SendLightUpdate() //do this when you change the light level
+        {
+            lightHsv = hsv; SendLightUpdate();
+        }
+
+        ///do this when you change the light level
+		public void SendLightUpdate()
 		{
 			Api.World.BlockAccessor.MarkBlockModified(base.Pos);
 		}
-		public void SetLightLevelFromVoltage(double voltage = -1f) ///set the light level from the supplied voltage. If no arg, it will take from Tree
+
+        ///set the light level from the supplied voltage. If no arg, it will take from Tree
+		public void SetLightLevelFromVoltage(double voltage = -1f)
 		{
 			//byte red = (byte)rred.Next(0,22);
 			//byte green = (byte)rblue.Next(0,22);
 			//byte blue = (byte)rgreen.Next(0,22);
 			if(voltage < 0 && this.GetBehavior<BEBehaviorElectricalConverter>() != null)
 			{
-			BlockEntity block = Api.World.BlockAccessor.GetBlockEntity(base.Pos);
-			voltage = this.GetBehavior<BEBehaviorElectricalConverter>().Voltage;
+    			BlockEntity block = Api.World.BlockAccessor.GetBlockEntity(base.Pos);
+    			voltage = this.GetBehavior<BEBehaviorElectricalConverter>().Voltage;
 			}
 			SetLightLevel((byte)(voltage * 2.2));
-			if(Api.Side == EnumAppSide.Server){Api.World.PlaySoundAt(new AssetLocation("autosifter:sounds/sifterworking"),Pos.X,Pos.Y,Pos.Z);}
+			if(Api.Side == EnumAppSide.Server)
+            {
+                Api.World.PlaySoundAt(new AssetLocation("autosifter:sounds/sifterworking"),Pos.X,Pos.Y,Pos.Z);
+            }
 		}
 	}
 }

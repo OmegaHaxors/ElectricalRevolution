@@ -25,6 +25,7 @@ namespace ElectricalRevolution
 			string dirs = base.LastCodePart(0);
 			return dirs[0] == facing.Code[0] || (dirs.Length > 1 && dirs[1] == facing.Code[0]);
 		}
+
 		public override bool HasMechPowerConnectorAt(IWorldAccessor world, BlockPos pos, BlockFacing face)
 		{
 			return this.IsOrientedTo(face);
@@ -83,8 +84,7 @@ namespace ElectricalRevolution
 			}
 			base.OnNeighbourBlockChange(world, pos, neibpos);
 		}
-		public override void DidConnectAt(IWorldAccessor world, BlockPos pos, BlockFacing face)
-		{
-		}
+
+		public override void DidConnectAt(IWorldAccessor world, BlockPos pos, BlockFacing face) {}
 	}
 }
