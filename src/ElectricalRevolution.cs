@@ -91,6 +91,7 @@ namespace ElectricalRevolution
 					BEBehaviorElectricalNode leadernode = blockmap[thatnode.LeaderNode]; //the neighbour block's leader
 					//ERROR: leadernode might no longer exist. Will need to act if this is ever not the case
 					//leader now signals off if it's ever removed, this should prevent the issue from arising
+					if(thisnode.NodeList == null || thatnode.NodeList == null){return;} //oh look, this problem again
 					if(thisnode.NodeList.Length > 0){thisblockisleader = true;}
 					if(thatnode.NodeList.Length > 0){thatblockisleader = true;}
 
@@ -275,6 +276,11 @@ namespace ElectricalRevolution
 				foreach(BlockPos leaderpos in leadermap)
 				{
 					message = message + leaderpos + "[ ";
+					if(!blockmap.ContainsKey(leaderpos))
+					{
+						sapi.SendMessage(splayer,GlobalConstants.GeneralChatGroup,"No MNA running",EnumChatType.CommandSuccess);
+						return;
+					}
 					BlockPos[] recruiterlist = blockmap[leaderpos].NodeList;
 					foreach(BlockPos recruiterpos in recruiterlist)
 					{
@@ -356,13 +362,13 @@ namespace ElectricalRevolution
 				tran = new Transient("LeaderTran:"+leaderpos,TPlist["LeaderTran:"+leaderpos]);
 				}else{
 				tran.ExportSimulationData += OnMNAExport; //otherwise register a new event handler
-				} 
-				CreateCircuit(tran, out Circuit ckt);
-				ckt.Add(new Sampler("sampler",TimePoints, (sender, exargs) =>
-                {tran.TimeParameters.StopTime =- 1; //reduces timeparameters stoptime by 1 per cycle (so it stops at 0)
-				}));//add the sampler at the end
+				}
 				tran.TimeParameters.UseIc = true;
 				tran.TimeParameters.StopTime = 10;
+				CreateCircuit(tran, out Circuit ckt);
+				ckt.Add(new Sampler("sampler",TimePoints, (sender, exargs) =>
+                {tran.TimeParameters.StopTime -= 1; //reduces timeparameters stoptime by 1 per cycle (so it stops at 0)
+				}));//add the sampler at the end
 				tran.Run(ckt);
 			}
 		}
@@ -457,12 +463,6 @@ namespace ElectricalRevolution
 
 			string pos = GetPositivePin(nodename);
 			string neg = GetNegativePin(nodename);
-			/*Circuit subcircuit = new Circuit(
-			//new Resistor (nodename+"PRP",pos,subpos,0.01),
-			//new Capacitor(nodename+"PCP",subpos,"0",0.01),
-			//new Inductor (nodename+"PI",subneg,neg,0.01),
-			//new Capacitor(nodename+"PCN",neg,"0",0.01)
-			);*/
 			string componenttype = GetNodeTypeFromName(nodename);
 			switch(componenttype)
 				{
@@ -493,14 +493,13 @@ namespace ElectricalRevolution
 				//now we check the pos and neg pins to make sure they have unideal components
 				//they need to be there to ensure all components are self-sufficient and won't crash
 			
-			
-			
 			if(!pos.EqualsFast("0"))//prevents the creation of unideal components on earth ground, as they're not needed there
 			{
 			string subpos = pos + "UNIDEAL";
 			if(!ckt.TryGetEntity(GetNodeNameFromPins("Resistor",pos,subpos),out var throwaway)) //no need to add the component if it already exists
 			{
 				ckt.Add(new Resistor(GetNodeNameFromPins("Resistor",pos,subpos),pos,subpos,0.01)); //add a resistor with 0.01ohm
+				ckt.Add(new Resistor(GetNodeNameFromPins("Resistor",pos,"0"),pos,"0",1e12)); //adds a very high resistance to ground
 				ckt.Add(new Capacitor(GetNodeNameFromPins("Capacitor",subpos,"0"),subpos,"0",0.01)); //add a capacitor-To-Ground with 0.01 farads
 			} 
 			}
@@ -509,6 +508,7 @@ namespace ElectricalRevolution
 			if(!ckt.TryGetEntity(GetNodeNameFromPins("Resistor",neg,subneg),out var throwaway)) //no need to add the component if it already exists
 			{
 				ckt.Add(new Resistor(GetNodeNameFromPins("Resistor",neg,subneg),neg,subneg,0.01)); //add a resistor with 0.01ohm
+				ckt.Add(new Resistor(GetNodeNameFromPins("Resistor",neg,"0"),neg,"0",1e12)); //adds a very high resistance to ground
 				ckt.Add(new Capacitor(GetNodeNameFromPins("Capacitor",subneg,"0"),subneg,"0",0.01)); //add a capacitor-To-Ground with 0.01 farads
 			}
 			}
