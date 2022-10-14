@@ -273,89 +273,6 @@ namespace ElectricalRevolution
 
 			}
 		}
-
-		public override void StartServerSide(ICoreServerAPI sapi)
-		{
-			this.sapi = sapi;
-
-			sapi.Event.SaveGameLoaded += OnSaveGameLoading;
-            sapi.Event.GameWorldSave += OnSaveGameSaving;
-			
-			/*string voltagename = GetNodeNameFromPins("VoltageSource",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(0,0,0)),"0");
-			string resistorname = GetNodeNameFromPins("Resistor",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(0,0,0)),GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)));
-			string diodename = GetNodeNameFromPins("Diode",GetPinNameAtPosition(new BlockPos(11,3,10),new Vec3i(0,0,0)),GetPinNameAtPosition(new BlockPos(12,3,10),new Vec3i(0,0,0)));
-			DiodeModel diodemodel = CreateDiodeModel(diodename);
-			string diodemodelname = diodemodel.Name;
-			string inductorname = GetNodeNameFromPins("Inductor",GetPinNameAtPosition(new BlockPos(12,3,10),new Vec3i(0,0,0)),GetPinNameAtPosition(new BlockPos(13,3,10),new Vec3i(0,0,0)));
-			string capacitorname = GetNodeNameFromPins("Capacitor",GetPinNameAtPosition(new BlockPos(13,3,10),new Vec3i(0,0,0)),"0");
-			
-			//make some basic components with hard-coded locations, you know, for testing.
-			componentlist.Add(voltagename, new VoltageSource(voltagename,GetPositivePin(voltagename),GetNegativePin(voltagename),1));
-			componentlist.Add(resistorname, new Resistor(resistorname,GetPositivePin(resistorname),GetNegativePin(resistorname),1));
-			componentlist.Add(diodename, new Diode(diodename,GetPositivePin(diodename),GetNegativePin(diodename),diodemodelname));
-			componentlist.Add(inductorname, new Inductor(inductorname,GetPositivePin(inductorname),GetNegativePin(inductorname),1));
-			componentlist.Add(capacitorname, new Capacitor(capacitorname,GetPositivePin(capacitorname),GetNegativePin(capacitorname),1)); */
-
-			sapi.World.RegisterGameTickListener(TickMNA,1000); //tick the MNA every second
-
-			sapi.RegisterCommand("mna","Gets a readout of the leaderlist","",(IServerPlayer splayer, int groupId, CmdArgs args) =>
-            {
-				string message = "";
-				foreach(BlockPos leaderpos in leadermap)
-				{
-					message = message + leaderpos + "[ ";
-					if(!blockmap.ContainsKey(leaderpos))
-					{
-						sapi.SendMessage(splayer,GlobalConstants.GeneralChatGroup,"No MNA running",EnumChatType.CommandSuccess);
-						return;
-					}
-					BlockPos[] recruiterlist = blockmap[leaderpos].NodeList;
-					foreach(BlockPos recruiterpos in recruiterlist)
-					{
-						message = message + recruiterpos + "  ";
-					}
-					message = message + "]";
-				}
-				sapi.SendMessage(splayer,GlobalConstants.GeneralChatGroup,message,EnumChatType.CommandSuccess);
-			/*if(args.Length > 0){
-			Double.TryParse(args[0],out double dcsetting);
-			ckt.TryGetEntity(GetNodeNameFromPins("VoltageSource",GetPinNameAtPosition(new BlockPos(10,3,10),new Vec3i(0,0,0)),"0"), out SpiceSharp.Entities.IEntity component);
-			if(!component.TrySetParameter("dc",dcsetting)){throw new NullReferenceException("MNA command couldn't set the parameter: dc");}
-			}
-
-			string capacitorname = GetNodeNameFromPins("Capacitor",GetPinNameAtPosition(new BlockPos(13,3,10),new Vec3i(0,0,0)),"0");
-			string inductorname = GetNodeNameFromPins("Inductor",GetPinNameAtPosition(new BlockPos(12,3,10),new Vec3i(0,0,0)),GetPinNameAtPosition(new BlockPos(13,3,10),new Vec3i(0,0,0)));
-			//double inductorreadout = ICWatchers[inductorname].Value;
-			//double capacitorreadout = ICWatchers[capacitorname].Value;
-			ckt.TryGetEntity(capacitorname, out SpiceSharp.Entities.IEntity node);
-			if(!node.TryGetProperty("ic", out double nodeic)){throw new NullReferenceException("MNA command couldn't get the property: ic");}
-			double capacitorreadout = nodeic;
-			ckt.TryGetEntity(inductorname, out node);
-			if(!node.TryGetProperty("ic", out nodeic)){throw new NullReferenceException("MNA command couldn't get the property: ic");}
-			double inductorreadout = nodeic;
-			sapi.BroadcastMessageToAllGroups("capacitor: "+capacitorreadout+" inductor: "+inductorreadout,EnumChatType.CommandSuccess);
-			*/
-			}, Privilege.chat);
-
-			sapi.RegisterCommand("blocklist","Read out the block list","",(IServerPlayer splayer, int groupId, CmdArgs args) =>
-            {
-				double inputvalue = 0;
-				if(args.Length > 0){
-				Double.TryParse(args[0],out inputvalue);
-				}
-				foreach(KeyValuePair<BlockPos,BEBehaviorElectricalNode> entry in blockmap)
-				{
-					string message = "Block at: " + entry.Key;
-					message = message + " Internal hash: " + entry.Value.Blockentity?.GetHashCode().ToString();
-					message = message + " External hash: " + api.World.BlockAccessor.GetBlockEntity(entry.Value.Blockentity.Pos)?.GetHashCode().ToString();
-					message = message + " Resistance: " + entry.Value.Resistance;
-					entry.Value.Resistance = inputvalue;
-					sapi.SendMessage(splayer,GlobalConstants.GeneralChatGroup,message,EnumChatType.CommandSuccess);
-					entry.Value.Blockentity.MarkDirty(true);
-				}
-			}, Privilege.chat);
-
-
 		public void TickMNA(float par)
 		{
 			if(blockmap.Count < 1){return;}//list is null. Don't start yet.
@@ -470,20 +387,6 @@ namespace ElectricalRevolution
 			
 			return new BlockPos(x,y,z);
 		}
-		public void AddComponent(Transient tran, Circuit ckt,string nodename,SpiceSharp.Entities.IEntity component)
-		{
-
-			//in (paracap) -> pararesistor -> component+ -> component- -> parainduct -> out
-
-			string pos = GetPositivePin(nodename);
-			string neg = GetNegativePin(nodename);
-			string componenttype = GetNodeTypeFromName(nodename);
-			switch(componenttype)
-				{
-					case "VoltageSource":
-					ckt.Add(component as VoltageSource);
-					break;
-
 
 		public void AddComponent(Transient tran, Circuit ckt,string nodename,SpiceSharp.Entities.IEntity component)
         {
@@ -546,13 +449,6 @@ namespace ElectricalRevolution
 				ckt.Add(new Capacitor(GetNodeNameFromPins("Capacitor",subneg,"0"),subneg,"0",0.01)); //add a capacitor-To-Ground with 0.01 farads
 			}
 			}
-
-
-                default:
-                    break;
-            }
-            //now we check the pos and neg pins to make sure they have unideal components
-            //they need to be there to ensure all components are self-sufficient and won't crash
 
             if(!pos.EqualsFast("0"))//prevents the creation of unideal components on earth ground, as they're not needed there
             {
