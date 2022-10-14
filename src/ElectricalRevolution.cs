@@ -29,22 +29,17 @@ namespace ElectricalRevolution
 		ICoreAPI api = null;
 		ICoreServerAPI sapi = null;
 		ICoreClientAPI capi = null;
-		public Dictionary<BlockPos, BEBehaviorElectricalNode> blockmap = new Dictionary<BlockPos, BEBehaviorElectricalNode>();
-		//warning: These are only instances of blocks, but I made special handling so that you can act on them directly
-		//It's not flawless. When loading from a save file, the block entity will be null until its BE is loaded.
-		//However, any information that was set while the block was unloaded will instantly apply when it is.
 
-		private void OnSaveGameLoading() //Read from loaded save data as the world starts up
-        {
-			//in case of save corruption, uncomment the function below to recover
-			//sapi.WorldManager.SaveGame.StoreData("blockmap",null);
-			byte[] data = sapi.WorldManager.SaveGame.GetData("blockmap");
-            blockmap = data == null ? new Dictionary<BlockPos, BEBehaviorElectricalNode>() : SerializerUtil.Deserialize<Dictionary<BlockPos, BEBehaviorElectricalNode>>(data);
-        }
-		private void OnSaveGameSaving() //Write save data to the world as it shuts down
-        {
-            sapi.WorldManager.SaveGame.StoreData("blockmap", SerializerUtil.Serialize(blockmap));
-        }
+        ///warning: These are only instances of blocks, but I made special handling so that you can act on them directly
+        ///It's not flawless. When loading from a save file, the block entity will be null until its BE is loaded.
+        ///However, any information that was set while the block was unloaded will instantly apply when it is.
+		public Dictionary<BlockPos, BEBehaviorElectricalNode> blockmap = new Dictionary<BlockPos, BEBehaviorElectricalNode>();
+
+        public Dictionary<string,SpiceSharp.Entities.IEntity> componentlist = new Dictionary<string,SpiceSharp.Entities.IEntity>();
+        public Dictionary<string,SpiceSharp.Simulations.TimeParameters> TPlist = new Dictionary<string,SpiceSharp.Simulations.TimeParameters>();
+
+        public BlockPos[] leadermap = new BlockPos[0];
+
 		public override void Start(ICoreAPI api)
 		{
 			this.api = api;
@@ -60,7 +55,36 @@ namespace ElectricalRevolution
 			api.RegisterBlockEntityBehaviorClass("MPGenerator", typeof(BEBehaviorMPGenerator));
 			api.RegisterBlockEntityBehaviorClass("CreativeConverter",typeof(BEBehaviorCreativeConverter));
 		}
-		public override void StartClientSide(ICoreClientAPI capi){this.capi = capi;}
+
+        public override void StartClientSide(ICoreClientAPI capi)
+        {
+            this.capi = capi;
+        }
+
+        public override void StartServerSide(ICoreServerAPI sapi)
+        {
+            this.sapi = sapi;
+            sapi.Event.SaveGameLoaded += OnSaveGameLoading;
+            sapi.Event.GameWorldSave += OnSaveGameSaving;
+            sapi.World.RegisterGameTickListener(TickMNA, 1000); //tick the MNA every second
+            Commands.registerCommands(api, sapi, this);
+        }
+
+        /// Read from loaded save data as the world starts up
+        private void OnSaveGameLoading()
+        {
+            //in case of save corruption, uncomment the function below to recover
+            //sapi.WorldManager.SaveGame.StoreData("blockmap",null);
+            byte[] data = sapi.WorldManager.SaveGame.GetData("blockmap");
+            blockmap = data == null ? new Dictionary<BlockPos, BEBehaviorElectricalNode>() : SerializerUtil.Deserialize<Dictionary<BlockPos, BEBehaviorElectricalNode>>(data);
+        }
+
+        ///Write save data to the world as it shuts down
+        private void OnSaveGameSaving()
+        {
+            sapi.WorldManager.SaveGame.StoreData("blockmap", SerializerUtil.Serialize(blockmap));
+        }
+
 		private static IEnumerable<double> TimePoints
         {
             get
@@ -73,11 +97,10 @@ namespace ElectricalRevolution
                 }    
             }
         }
-		public Dictionary<string,SpiceSharp.Entities.IEntity> componentlist = new Dictionary<string,SpiceSharp.Entities.IEntity>();
-		public Dictionary<string,SpiceSharp.Simulations.TimeParameters> TPlist = new Dictionary<string,SpiceSharp.Simulations.TimeParameters>();
 
+        ///Tries to find neighbours and attach them to eachother
 		public void UpdateBlockmap(BlockPos thispos)
-		{//Tries to find neighbours and attach them to eachother
+		{
 			BlockPos[] neighbourposes = new BlockPos[6]{thispos.UpCopy(1),thispos.DownCopy(1),thispos.NorthCopy(1),thispos.EastCopy(1),thispos.SouthCopy(1),thispos.WestCopy(1),};
 			foreach(BlockPos thatpos in neighbourposes)
 			{
@@ -154,10 +177,11 @@ namespace ElectricalRevolution
 			}
 			CreateLeaderMap();
 		}
-		public BlockPos[] leadermap = new BlockPos[0];
-		public void CreateLeaderMap()//this is what compiles the blockmap into many seperate leadermaps so they can be turned into ckts and ultimately trans
-		{//unlike the leadermap, it's not saved since it's created from the blockmap every tick
-			
+
+        ///this is what compiles the blockmap into many seperate leadermaps so they can be turned into ckts and ultimately trans
+        ///unlike the blockmap, the leadermap is not saved, since it's created from the blockmap every tick
+		public void CreateLeaderMap()
+		{
 			leadermap = new BlockPos[0]; //first we wipe it clean to prevent any pollution from last tick
 			foreach(KeyValuePair<BlockPos,BEBehaviorElectricalNode> entry in blockmap)
 			{
@@ -166,24 +190,24 @@ namespace ElectricalRevolution
 					leadermap = leadermap.Append(entry.Key); //add it to the leadermap
 				}
 			}
-
-			
 		}
+
+        ///tiebreaker function. Smallest X, then Y, then Z wins. True if thisnode wins. False if thatnode wins.
+        /// TODO: Replace with a BlockPos comparison function extension (if that exists in C#) so you can do `poslocal < posremote`
 		public bool NodeTieBreaker(BlockPos poslocal, BlockPos posremote)
-    	{ //tiebreaker function. Smallest X, then Y, then Z wins. True if thisnode wins. False if thatnode wins.
+    	{
       		if(poslocal.X < posremote.X){return true;}
       		if(poslocal.X > posremote.X){return false;}
 			//in most cases, it will resolve here, but in the case of a tie...
 			if(poslocal.Y < posremote.Y){return true;}
      	 	if(poslocal.Y > posremote.Y){return false;}
-    		//gee golly, still not resolved? 
+    		  //gee golly, still not resolved?
       		if(poslocal.Z < posremote.Z){return true;}
     	 	if(poslocal.Z > posremote.Z){return false;}
     	 	throw new ArgumentException//something clearly went wrong. Throw an exception.
       		("ShouldIBeTheLeader was unable to resolve. It's likely because the local and remote position were the same.");
    		}
-		
-		
+
 		public void CreateCircuit(Transient tran, out Circuit ckt)
 		{
 			ckt = new Circuit();
@@ -196,21 +220,23 @@ namespace ElectricalRevolution
 			{
 				string componentname = entry.Key;
 				SpiceSharp.Entities.IEntity component = entry.Value;
-				string componenttype = GetNodeTypeFromName(componentname);
-				if(ckt.TryGetEntity(componentname, out var throwaway)){continue;}//only add to the ckt if it wasn't there before
+                string componenttype = PinHelper.GetNodeTypeFromName(componentname);
+				if(ckt.TryGetEntity(componentname, out var throwaway)){continue;} //only add to the ckt if it wasn't there before
 				AddComponent(tran,ckt,componentname,component);
 			}
 		}
+
 		public void OnMNAExport(object sender, ExportDataEventArgs exargs)
 		{
-			Transient tran = (Transient)sender;
-
-			if(tran.TimeParameters.StopTime <= 0)
-			{
-			MNAFinish(tran); //Tell the MNA to upload the information from this tick into the next so that it can pass on.
-			}
+            Transient tran = (Transient)sender;
+            if(tran.TimeParameters.StopTime <= 0)
+            {
+                MNAFinish(tran); //Tell the MNA to upload the information from this tick into the next so that it can pass on.
+            }
 		}
-		public void MNAFinish(Transient tran) //finish the tick then shut down
+
+        ///finish the tick then shut down
+		public void MNAFinish(Transient tran)
 		{
 			//foreach(KeyValuePair<string,Export<IBiasingSimulation, double>> entry in ICWatchers)
 			//{
@@ -224,21 +250,22 @@ namespace ElectricalRevolution
 			//}
 			castMNAtoblocks(tran); //sends data from the MNA into the blockents
 		}
+
 		public void castMNAtoblocks(Transient tran)
 		{
 			foreach(KeyValuePair<string,SpiceSharp.Entities.IEntity> entry in componentlist)
 			{
 				SpiceSharp.Entities.IEntity component = entry.Value;
 				string componentname = component.Name;
-				string componentlocation = GetPositivePin(componentname);
-				BlockPos blockpos = PinToBlockPos(componentlocation,out Vec3i sublocation);
+				string componentlocation = PinHelper.GetPositivePin(componentname);
+                BlockPos blockpos = PinHelper.PinToBlockPos(componentlocation,out Vec3i sublocation);
 				//Block block = api.World.BlockAccessor.GetBlock(blockpos);
 				BlockEntity blockent = api.World.BlockAccessor.GetBlockEntity(blockpos);
 				if(blockent == null){continue;} //it's probably unloaded. No need to update it.
 				BEBehaviorElectricalNode blockbehavior = blockent.GetBehavior<BEBehaviorElectricalNode>();
 				if(blockbehavior == null){continue;} //if it's not a node, don't bother with it.
 				blockbehavior.Current = new RealCurrentExport(tran,componentname).Value;
-				blockbehavior.Voltage = new RealVoltageExport(tran,GetPositivePin(componentname),GetNegativePin(componentname)).Value;
+                blockbehavior.Voltage = new RealVoltageExport(tran,PinHelper.GetPositivePin(componentname),PinHelper.GetNegativePin(componentname)).Value;
 				
 				//sapi.BroadcastMessageToAllGroups(blockbehavior.Voltage + "+"+ blockbehavior.Current,EnumChatType.CommandError);
 				blockbehavior.Blockentity.MarkDirty(true);
@@ -246,6 +273,7 @@ namespace ElectricalRevolution
 
 			}
 		}
+
 		public override void StartServerSide(ICoreServerAPI sapi)
 		{
 			this.sapi = sapi;
@@ -327,23 +355,7 @@ namespace ElectricalRevolution
 				}
 			}, Privilege.chat);
 
-			/*sapi.RegisterCommand("here","Where am I? answered in text form","",(IServerPlayer splayer, int groupId, CmdArgs args) =>
-            {
-				BlockPos blockpos = splayer.Entity.Pos.AsBlockPos;
-				Vec3i subblockpos = new Vec3i(0,0,0);
 
-				string message = GetPinNameAtPosition(blockpos,subblockpos);
-				string nodename = GetNodeNameFromPins("VoltageSource",GetPinNameAtPosition(blockpos,subblockpos),"0");
-				string nodetype = GetNodeTypeFromName(nodename);
-				string pospinname = GetPositivePin(nodename);
-				string negpinname = GetNegativePin(nodename);
-				splayer.SendMessage(GlobalConstants.GeneralChatGroup,message,EnumChatType.CommandSuccess);
-				splayer.SendMessage(GlobalConstants.GeneralChatGroup,nodename,EnumChatType.CommandSuccess);
-				splayer.SendMessage(GlobalConstants.GeneralChatGroup,nodetype,EnumChatType.CommandSuccess);
-				splayer.SendMessage(GlobalConstants.GeneralChatGroup,pospinname,EnumChatType.CommandSuccess);
-				splayer.SendMessage(GlobalConstants.GeneralChatGroup,negpinname,EnumChatType.CommandSuccess);
-			}, Privilege.chat);*/
-		}
 		public void TickMNA(float par)
 		{
 			if(blockmap.Count < 1){return;}//list is null. Don't start yet.
@@ -372,6 +384,7 @@ namespace ElectricalRevolution
 				tran.Run(ckt);
 			}
 		}
+
 		public DiodeModel CreateDiodeModel(string name)
         {
             var diodemodel = new DiodeModel(name + "#diodemodel"); //the parameters of a standard silicon diode
@@ -383,6 +396,7 @@ namespace ElectricalRevolution
 			diodemodel.SetParameter("tt",20e-9); //transit time
             return diodemodel;
         }
+
 		public static string GetPinNameAtPosition(BlockPos blockpos, Vec3i subblockpos) //Converts blockpos and subblockpos into a pin
 		{
 			if(blockpos == null || subblockpos == null){return "0";}
@@ -470,22 +484,42 @@ namespace ElectricalRevolution
 					ckt.Add(component as VoltageSource);
 					break;
 
-					case "Resistor":
-					ckt.Add(component as Resistor);
-					break;
 
-					case "Inductor":
-					ckt.Add(component as Inductor);
-					break;
+		public void AddComponent(Transient tran, Circuit ckt,string nodename,SpiceSharp.Entities.IEntity component)
+        {
+            //in (paracap) -> pararesistor -> component+ -> component- -> parainduct -> out
+            string pos = PinHelper.GetPositivePin(nodename);
+            string neg = PinHelper.GetNegativePin(nodename);
+            /*Circuit subcircuit = new Circuit(
+            //new Resistor (nodename+"PRP",pos,subpos,0.01),
+            //new Capacitor(nodename+"PCP",subpos,"0",0.01),
+            //new Inductor (nodename+"PI",subneg,neg,0.01),
+            //new Capacitor(nodename+"PCN",neg,"0",0.01)
+            );*/
+            string componenttype = PinHelper.GetNodeTypeFromName(nodename);
+            switch(componenttype)
+            {
+                case "VoltageSource":
+                    ckt.Add(component as VoltageSource);
+                    break;
 
-					case "Capacitor":
-					ckt.Add(component as Capacitor);
-					break;
+                case "Resistor":
+                    ckt.Add(component as Resistor);
+                    break;
 
-					case "Diode":
-					ckt.Add(component as Diode);
-					ckt.Add(CreateDiodeModel(component.Name));
-					break;
+                case "Inductor":
+                    ckt.Add(component as Inductor);
+                    break;
+
+                case "Capacitor":
+                    ckt.Add(component as Capacitor);
+                    break;
+
+
+                case "Diode":
+                    ckt.Add(component as Diode);
+                    ckt.Add(CreateDiodeModel(component.Name));
+                    break;
 
 					default:
 					break;
@@ -514,15 +548,29 @@ namespace ElectricalRevolution
 			}
 
 
-		}
-		public string Addifnot(string inputstring, string addthis, string ifnotthis)
-		{
-			string outputstring = inputstring;
-			if(!inputstring.EqualsFast(ifnotthis))
-			{
-				inputstring = inputstring + addthis;
-			}
-			return outputstring;
-		}
+                default:
+                    break;
+            }
+            //now we check the pos and neg pins to make sure they have unideal components
+            //they need to be there to ensure all components are self-sufficient and won't crash
+
+            if(!pos.EqualsFast("0"))//prevents the creation of unideal components on earth ground, as they're not needed there
+            {
+                string subpos = pos + "UNIDEAL";
+                if(!ckt.TryGetEntity(PinHelper.GetNodeNameFromPins("Resistor",pos,subpos),out var throwaway)) //no need to add the component if it already exists
+                {
+                    ckt.Add(new Resistor(PinHelper.GetNodeNameFromPins("Resistor",pos,subpos),pos,subpos,0.01)); //add a resistor with 0.01ohm
+                    ckt.Add(new Capacitor(PinHelper.GetNodeNameFromPins("Capacitor",subpos,"0"),subpos,"0",0.01)); //add a capacitor-To-Ground with 0.01 farads
+                }
+            }
+            if(!neg.EqualsFast("0")){
+                string subneg = neg + "UNIDEAL";
+                if(!ckt.TryGetEntity(PinHelper.GetNodeNameFromPins("Resistor",neg,subneg),out var throwaway)) //no need to add the component if it already exists
+                {
+                    ckt.Add(new Resistor(PinHelper.GetNodeNameFromPins("Resistor",neg,subneg),neg,subneg,0.01)); //add a resistor with 0.01ohm
+                    ckt.Add(new Capacitor(PinHelper.GetNodeNameFromPins("Capacitor",subneg,"0"),subneg,"0",0.01)); //add a capacitor-To-Ground with 0.01 farads
+                }
+            }
+        }
 	}
 }

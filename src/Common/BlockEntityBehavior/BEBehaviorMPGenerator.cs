@@ -22,9 +22,15 @@ namespace ElectricalRevolution
 	{
 		public new float resistance = 0f;
 		public float powerconverted = 0f;
+        protected readonly BlockFacing[] orients = new BlockFacing[2];
+        protected readonly BlockPos[] sides = new BlockPos[2];
+        private ICoreClientAPI capi;
+        private string orientations;
+
 		public BEBehaviorMPGenerator(BlockEntity blockentity) : base(blockentity)
 		{
 		}
+
 		public override bool OnTesselation(ITerrainMeshPool mesher, ITesselatorAPI tesselator)
 		{
 			return false;
@@ -66,12 +72,14 @@ namespace ElectricalRevolution
 			this.sides[0] = this.Position.AddCopy(BlockFacing.NORTH);
 			this.sides[1] = this.Position.AddCopy(BlockFacing.SOUTH);
 		}
+
 		public override float GetResistance()
 		{
 			//float speed = this.TrueSpeed;
 			float theresistance = this.TrueSpeed;
 			return theresistance;
 		}
+
 		public override void JoinNetwork(MechanicalNetwork network)
 		{
 			base.JoinNetwork(network);
@@ -82,37 +90,36 @@ namespace ElectricalRevolution
 				network.clientSpeed /= speed;
 			}
 		}
+
 		public bool IsAttachedToBlock()
 		{
 			return (this.orientations == "ns" || this.orientations == "we") && (this.Api.World.BlockAccessor.IsSideSolid(this.Position.X, this.Position.Y - 1, this.Position.Z, BlockFacing.UP) || this.Api.World.BlockAccessor.IsSideSolid(this.Position.X, this.Position.Y + 1, this.Position.Z, BlockFacing.DOWN));
 		}
+
 		public override void FromTreeAttributes(ITreeAttribute tree, IWorldAccessor worldAccessForResolve)
 		{
-      if (this.Blockentity is MPGeneratorBlockEntity mpgenerator)
-      {
-        if (mpgenerator.GetBehavior<BEBehaviorElectricalConverter>() != null)
-        {
-          BEBehaviorElectricalConverter converter = mpgenerator.GetBehavior<BEBehaviorElectricalConverter>();
-          powerconverted = converter.Powerconverted * 100000;
+            if (this.Blockentity is MPGeneratorBlockEntity mpgenerator)
+            {
+                if (mpgenerator.GetBehavior<BEBehaviorElectricalConverter>() != null)
+                {
+                    BEBehaviorElectricalConverter converter = mpgenerator.GetBehavior<BEBehaviorElectricalConverter>();
+                    powerconverted = converter.Powerconverted * 100000;
+                }
+            }
+            base.FromTreeAttributes(tree,worldAccessForResolve);
         }
-      }
-      base.FromTreeAttributes(tree,worldAccessForResolve);
-		}
-		public override void ToTreeAttributes(ITreeAttribute tree)
-		{
-      if (this.Blockentity is MPGeneratorBlockEntity mpgenerator)
-      {
-        if (mpgenerator.GetBehavior<BEBehaviorElectricalConverter>() != null)
+
+        public override void ToTreeAttributes(ITreeAttribute tree)
         {
-          BEBehaviorElectricalConverter converter = mpgenerator.GetBehavior<BEBehaviorElectricalConverter>();
-          converter.Powerconverted = Math.Max(0f, TrueSpeed * GetResistance()) * 100000;
-        }
-      }
-      base.ToTreeAttributes(tree);
+            if (this.Blockentity is MPGeneratorBlockEntity mpgenerator)
+            {
+                if (mpgenerator.GetBehavior<BEBehaviorElectricalConverter>() != null)
+                {
+                    BEBehaviorElectricalConverter converter = mpgenerator.GetBehavior<BEBehaviorElectricalConverter>();
+                    converter.Powerconverted = Math.Max(0f, TrueSpeed * GetResistance()) * 100000;
+                }
+            }
+            base.ToTreeAttributes(tree);
 		}
-		protected readonly BlockFacing[] orients = new BlockFacing[2];
-		protected readonly BlockPos[] sides = new BlockPos[2];
-		private ICoreClientAPI capi;
-		private string orientations;
 	}
 }

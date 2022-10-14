@@ -21,13 +21,13 @@ namespace ElectricalRevolution
 	public class MPGeneratorBlockEntity : BlockEntity
 	{
 		BEBehaviorMPGenerator mpc = null;
-		//bool powered = false;
 
 		public override void Initialize(ICoreAPI api)
 		{
 			base.Initialize(api);
-			RegisterGameTickListener(UpdateNBT,1000);//only runs on the server (set to 100)
+			RegisterGameTickListener(UpdateNBT, 1000);//only runs on the server (set to 100)
 		}
+
 		public void UpdateNBT(float dt)
 		{
 			this.MarkDirty(true);
@@ -39,24 +39,8 @@ namespace ElectricalRevolution
 			this.mpc = base.GetBehavior<BEBehaviorMPGenerator>();
 			if (this.mpc != null)
 			{
-				this.mpc.OnConnected = () =>
-        {
-          //this.powered = true;
-          /*if (this.renderer != null)
-					{
-						this.renderer.ShouldRender = true;
-						this.renderer.ShouldRotateAutomated = true;
-					}*/
-        };
-				this.mpc.OnDisconnected = () =>
-        {
-         // this.powered = false;
-          /*if (this.renderer != null)
-					{
-						this.renderer.ShouldRender = false;
-						this.renderer.ShouldRotateAutomated = false;
-					}*/
-        };
+				this.mpc.OnConnected = () => {};
+				this.mpc.OnDisconnected = () => {};
 			}
 		}
 	}
